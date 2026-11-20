@@ -94,6 +94,7 @@ async function loadIndex(){
   renderResults();
   loadIbarakiMunicipalities();
  }catch(e){$("loadState").textContent="全国データを読み込めませんでした："+e.message+"。通信環境を確認するか、提供元のページを開いてください。";$("results").innerHTML='<a href="https://tecolicom.github.io/japan-gomi-data/" target="_blank" rel="noopener">オープンデータ提供元を開く</a>'}
+  loadIbarakiMunicipalities();
 }
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 async function loadIbarakiMunicipalities(){
@@ -170,21 +171,6 @@ function renderManual(){$("manualList").innerHTML=manual.length?manual.slice().s
 $("addManual").onclick=()=>{const date=$("manualDate").value,name=$("manualName").value.trim();if(!date||!name){alert("日付と予定名を入力してください");return}manual.push({date,name,memo:$("manualMemo").value.trim()});$("manualName").value="";$("manualMemo").value="";saveManual()};
 $("exportManual").onclick=()=>{const a=document.createElement("a"),u=URL.createObjectURL(new Blob([JSON.stringify(manual,null,2)],{type:"application/json"}));a.href=u;a.download="gomi-manual.json";a.click();URL.revokeObjectURL(u)};
 $("importManual").onchange=async e=>{try{const x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x)||x.some(v=>!v.date||!v.name))throw Error();manual=x;saveManual()}catch{alert("ファイルを読み込めませんでした")}};
-let ibarakiLoaded=false,ibarakiItems=[];
-async function loadIbarakiDirectory(){
- if(!ibarakiLoaded){
-  try{const res=await fetch("./data/ibaraki-municipalities.json",{cache:"no-store"});if(!res.ok)throw Error("HTTP "+res.status);const data=await res.json();ibarakiItems=data.municipalities||[];ibarakiLoaded=true;}
-  catch(e){$("ibarakiCount").textContent="一覧を読み込めませんでした："+e.message;return}
- }
- renderIbarakiDirectory();
-}
-function renderIbarakiDirectory(){
- const q=$("ibarakiQuery").value.trim().toLowerCase();
- const items=ibarakiItems.filter(x=>x.name.toLowerCase().includes(q));
- $("ibarakiCount").textContent=items.length+" / "+ibarakiItems.length+" 市町村";
- $("ibarakiList").innerHTML=items.map(x=>'<div class="result"><b>'+escapeHtml(x.name)+'</b><small>'+escapeHtml(x.calendar_status||"公式カレンダー未確認")+'</small><a href="'+escapeHtml(x.calendar_page||x.official_site)+'" target="_blank" rel="noopener">'+(x.calendar_page?"公式ごみカレンダーを開く":"自治体公式サイトを開く")+'</a></div>').join("")||'<p class="muted">該当する市町村がありません。</p>';
-}
-$("ibarakiQuery").addEventListener("input",renderIbarakiDirectory);
 renderManual();drawCalendar();loadIndex();
 </script>
 </body></html>
