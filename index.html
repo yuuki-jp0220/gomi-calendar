@@ -29,7 +29,7 @@ footer{max-width:980px;margin:0 auto;padding:0 14px 30px;color:var(--muted);font
 <body>
 <header><small>LOCAL LIFE / WASTE CALENDAR</small><h1>全国ごみ収集カレンダー</h1><p>自治体・地区を探して、収集日をカレンダーで確認。</p></header>
 <main>
-<nav class="tabs"><button class="tab on" data-tab="search">地域を探す</button><button class="tab" data-tab="calendar">カレンダー</button><button class="tab" data-tab="manual">手動予定</button><button class="tab" data-tab="ibaraki">茨城県</button></nav>
+<nav class="tabs"><button class="tab on" data-tab="search">地域を探す</button><button class="tab" data-tab="calendar">カレンダー</button><button class="tab" data-tab="manual">手動予定</button></nav>
 <section id="search">
 <div class="card">
 <h2>お住まいの地域を検索</h2>
@@ -52,14 +52,6 @@ footer{max-width:980px;margin:0 auto;padding:0 14px 30px;color:var(--muted);font
 <div class="card"><h3 id="dayTitle">収集予定</h3><div id="dayEvents" class="muted">日付を選ぶと予定が表示されます。</div><h3 style="margin-top:18px">今後7日間</h3><div id="upcoming" class="muted">地域を選択してください。</div></div>
 <div class="card"><p class="muted">データ提供：<a href="https://github.com/tecolicom/japan-gomi-data" target="_blank" rel="noopener">japan-gomi-data</a>（CC BY 4.0）。自治体公式資料をもとに整理されたデータです。出典・ライセンス・更新状況は提供元で確認できます。</p></div>
 </section>
-<section id="ibaraki" class="hidden">
-<div class="card"><h2>茨城県・市町村一覧</h2>
-<p class="muted">県公式の市町村一覧をもとに、44市町村の公式サイトを掲載しています。自治体を選んで公式サイトを確認できます。</p>
-<div class="notice">重要：ここは公式サイトへの案内一覧です。現在、44市町村すべての収集日データを取り込めたわけではありません。収集日が未確認の地域は、日付を推測して表示しません。</div>
-<div class="row" style="margin-top:12px"><input id="ibarakiQuery" class="grow" placeholder="市町村名で検索"></div>
-<p class="muted" id="ibarakiCount">一覧を読み込み中…</p><div id="ibarakiList" class="results"></div>
-<p class="muted">市町村一覧の出典：<a href="https://www.pref.ibaraki.jp/towns/" target="_blank" rel="noopener">茨城県「県内の市町村」</a></p>
-</div></section>
 <section id="manual" class="hidden">
 <div class="card"><h2>手動の予定を追加</h2><p class="muted">全国データにない地域や、家庭独自の予定を登録できます。予定はこのブラウザ内に保存されます。</p>
 <div class="row"><input id="manualDate" type="date" class="grow"><input id="manualName" class="grow" placeholder="例：燃えるごみ"></div><div class="row" style="margin-top:10px"><input id="manualMemo" class="grow" placeholder="メモ（任意）"><button id="addManual">追加</button></div><div id="manualList"></div>
@@ -74,7 +66,7 @@ footer{max-width:980px;margin:0 auto;padding:0 14px 30px;color:var(--muted);font
 <script>
 const INDEX_URL="https://tecolicom.github.io/japan-gomi-data/ics/index.csv";
 const $=id=>document.getElementById(id);
-let records=[],active=null,events=[],month=new Date(),picked=new Date();picked.setHours(0,0,0,0);
+let records=[],ibarakiMunicipalities=[],active=null,events=[],month=new Date(),picked=new Date();picked.setHours(0,0,0,0);
 let manual=JSON.parse(localStorage.getItem("gomiManualV2")||"[]");
 const jpDays=["日","月","火","水","木","金","土"];
 function csvParse(text){
@@ -100,14 +92,23 @@ async function loadIndex(){
   $("pref").innerHTML='<option value="">すべての都道府県</option>'+prefs.map(p=>'<option>'+escapeHtml(p)+'</option>').join("");
   $("loadState").textContent=records.length.toLocaleString()+" 件の収集コースを読み込みました。都道府県・市区町村・町名で検索できます。";
   renderResults();
+  loadIbarakiMunicipalities();
  }catch(e){$("loadState").textContent="全国データを読み込めませんでした："+e.message+"。通信環境を確認するか、提供元のページを開いてください。";$("results").innerHTML='<a href="https://tecolicom.github.io/japan-gomi-data/" target="_blank" rel="noopener">オープンデータ提供元を開く</a>'}
 }
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+async function loadIbarakiMunicipalities(){
+ try{const res=await fetch("./data/ibaraki-municipalities.json",{cache:"no-store"});if(!res.ok)throw Error("HTTP "+res.status);const data=await res.json();ibarakiMunicipalities=data.municipalities||[];
+  const pref=$("pref");if(![...pref.options].some(o=>o.value==="茨城県"))pref.add(new Option("茨城県","茨城県"));renderResults();
+ }catch(e){console.warn("茨城県の自治体一覧を読み込めませんでした",e)}
+}
 function renderResults(){
  const q=$("query").value.trim().toLowerCase(),p=$("pref").value;
  const filtered=records.filter(r=>(!p||r.pref===p)&&(!q||[r.city,r.course,r.courseName,r.areas,r.pref].join(" ").toLowerCase().includes(q))).slice(0,100);
- $("results").innerHTML=filtered.length?filtered.map((r,i)=>'<button class="result" data-index="'+records.indexOf(r)+'"><b>'+escapeHtml(r.pref+"　"+r.city)+'</b><span>'+escapeHtml(r.courseName||r.course||"収集コース")+'</span><small>'+escapeHtml(r.areas||"対象地区の記載なし")+'</small></button>').join(""):'<p class="muted">該当する地域が見つかりません。町名の一部や市区町村名で検索してみてください。</p>';
- $("results").querySelectorAll("[data-index]").forEach(b=>b.onclick=()=>choose(records[Number(b.dataset.index)]));
+ const local=ibarakiMunicipalities.filter(x=>(!p||p==="茨城県")&&(!q||("茨城県 "+x.name).toLowerCase().includes(q)));
+ const normalHtml=filtered.map(r=>'<button class="result" data-index="'+records.indexOf(r)+'"><b>'+escapeHtml(r.pref+"　"+r.city)+'</b><span>'+escapeHtml(r.courseName||r.course||"収集コース")+'</span><small>'+escapeHtml(r.areas||"対象地区の記載なし")+'</small></button>').join("");
+ const localHtml=local.map(x=>'<div class="result"><b>茨城県　'+escapeHtml(x.name)+'</b><small>'+escapeHtml(x.calendar_status||"公式カレンダー未確認")+'</small><a href="'+escapeHtml(x.calendar_page||x.official_site)+'" target="_blank" rel="noopener">'+(x.calendar_page?"公式ごみカレンダーを開く":"自治体公式サイトを開く")+'</a></div>').join("");
+ $("results").innerHTML=(normalHtml+localHtml)||'<p class="muted">該当する地域が見つかりません。町名の一部や市区町村名で検索してみてください。</p>';
+ $("results").querySelectorAll("[data-index]").forEach(el=>el.onclick=()=>choose(records[Number(el.dataset.index)]));
 }
 $("query").addEventListener("input",renderResults);$("pref").addEventListener("change",renderResults);
 function decodeIcs(s){return (s||"").replace(/\\n/gi," ").replace(/\\,/g,",").replace(/\\;/g,";").replace(/\\\\/g,"\\")}
@@ -163,7 +164,7 @@ function showUpcoming(){
  $("upcoming").innerHTML=a.length?a.map(e=>'<div class="item"><span>'+new Date(e.date+"T00:00:00").toLocaleDateString("ja-JP",{month:"numeric",day:"numeric",weekday:"short"})+'</span><b>'+escapeHtml(e.summary)+'</b></div>').join(""):'<span class="muted">今後7日間に登録された予定はありません。</span>';
 }
 $("prev").onclick=()=>{month.setMonth(month.getMonth()-1);drawCalendar()};$("next").onclick=()=>{month.setMonth(month.getMonth()+1);drawCalendar()};
-document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));["search","calendar","manual","ibaraki"].forEach(id=>$(id).classList.toggle("hidden",id!==b.dataset.tab));if(b.dataset.tab==="calendar")drawCalendar();if(b.dataset.tab==="ibaraki")loadIbarakiDirectory()});
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));["search","calendar","manual"].forEach(id=>$(id).classList.toggle("hidden",id!==b.dataset.tab));if(b.dataset.tab==="calendar")drawCalendar()});
 function saveManual(){localStorage.setItem("gomiManualV2",JSON.stringify(manual));renderManual();drawCalendar()}
 function renderManual(){$("manualList").innerHTML=manual.length?manual.slice().sort((a,b)=>a.date.localeCompare(b.date)).map((x,i)=>'<div class="item"><span>'+escapeHtml(x.date+"　"+x.name)+(x.memo?"<small class=muted><br>"+escapeHtml(x.memo)+"</small>":"")+'</span><button data-del="'+i+'" class="tab">削除</button></div>').join(""):'<p class="muted">手動予定はありません。</p>';$("manualList").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{manual.splice(Number(b.dataset.del),1);saveManual()})}
 $("addManual").onclick=()=>{const date=$("manualDate").value,name=$("manualName").value.trim();if(!date||!name){alert("日付と予定名を入力してください");return}manual.push({date,name,memo:$("manualMemo").value.trim()});$("manualName").value="";$("manualMemo").value="";saveManual()};
