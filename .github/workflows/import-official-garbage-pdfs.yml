@@ -32,7 +32,7 @@ jobs:
         run: |
           if [[ -n "$(git status --porcelain data/pdf-source-status.json data/imported-collection-dates.json)" ]]; then
             git config user.name "github-actions[bot]"
-            git config user.email "41898282+users.noreply.github.com"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add data/pdf-source-status.json data/imported-collection-dates.json
             git commit -m "Import official garbage collection dates"
             git push
