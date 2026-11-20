@@ -1,12 +1,19 @@
-import hashlib, json, os, re, tempfile, time
+import hashlib
+import json
+import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urljoin, urlparse, unquote
+
+import fitz
+import pdfplumber
 import requests
 from bs4 import BeautifulSoup
-from google import genai
-from google.genai import types
-from pydantic import BaseModel, Field
+from PIL import Image
+from rapidocr_onnxruntime import RapidOCR
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,23 +22,42 @@ STATUS = ROOT / "data/pdf-source-status.json"
 OUTPUT = ROOT / "data/imported-collection-dates.json"
 ASSET_DIR = ROOT / "temp_assets"
 HEADERS = {"User-Agent": "IbarakiGarbageCalendar/1.0 (official municipal calendar importer)"}
-KEYWORDS = ("ごみ", "ゴミ", "収集", "カレンダー", "日程", "分別", "地区", "資源")
 EXTENSIONS = (".pdf", ".png", ".jpg", ".jpeg", ".webp")
 MAX_ASSET_BYTES = 20 * 1024 * 1024
 MAX_ASSETS_PER_PAGE = 8
 
-class GarbageSchedule(BaseModel):
-    date: str = Field(description='YYYY-MM-DD または「毎週月・木」「第2・4水曜」など原文どおりのルール')
-    garbage_type: str
-    note: str = ""
+# 小規模な文字分類モデル。日程の抽出自体は原文の行・表記を優先する。
+TRAINING = [
+    ("燃えるごみ", "可燃ごみ"), ("燃やすごみ", "可燃ごみ"), ("可燃ごみ", "可燃ごみ"),
+    ("燃えないごみ", "不燃ごみ"), ("燃やさないごみ", "不燃ごみ"), ("不燃ごみ", "不燃ごみ"),
+    ("資源ごみ", "資源ごみ"), ("資源物", "資源ごみ"), ("びん", "資源ごみ"),
+    ("かん", "資源ごみ"), ("缶", "資源ごみ"), ("ペットボトル", "資源ごみ"),
+    ("古紙", "資源ごみ"), ("新聞紙", "資源ごみ"), ("段ボール", "資源ごみ"),
+    ("プラスチック", "プラスチック"), ("容器包装プラ", "プラスチック"),
+    ("粗大ごみ", "粗大ごみ"), ("有害ごみ", "有害ごみ"), ("危険ごみ", "有害ごみ"),
+]
+class GarbageBuiltInAI:
+    def __init__(self):
+        self.vectorizer = TfidfVectorizer(analyzer="char", ngram_range=(1, 2))
+        texts, labels = zip(*TRAINING)
+        self.matrix = self.vectorizer.fit_transform(texts)
+        self.model = MultinomialNB().fit(self.matrix, labels)
+        self.examples = [x for x, _ in TRAINING]
 
-class MunicipalityGarbageData(BaseModel):
-    municipality: str
-    area_name: str
-    schedules: list[GarbageSchedule]
-
-class ExtractionResult(BaseModel):
-    areas: list[MunicipalityGarbageData]
+    def classify(self, text):
+        text = clean(text)
+        if not text:
+            return text, 0.0, True
+        # 短い・未知の語は無理にカテゴリ変更しない
+        if not any(term in text for term in self.examples):
+            return text, 0.0, True
+        vec = self.vectorizer.transform([text])
+        probs = self.model.predict_proba(vec)[0]
+        best = int(probs.argmax())
+        confidence = float(probs[best])
+        if confidence < 0.72:
+            return text, confidence, True
+        return str(self.model.classes_[best]), confidence, False
 
 def read_json(path, default):
     try:
@@ -40,28 +66,19 @@ def read_json(path, default):
         return default
 
 def clean(value):
-    return re.sub(r"\s+", " ", value or "").strip()
+    return re.sub(r"\s+", " ", str(value or "")).strip()
 
 def fetch_page_assets(url):
     ASSET_DIR.mkdir(parents=True, exist_ok=True)
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
-        try:
-            page.goto(url, wait_until="networkidle", timeout=45000)
-        except Exception:
-            page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        try:
-            page.wait_for_load_state("networkidle", timeout=8000)
-        except Exception:
-            pass
-        html = page.content()
-        browser.close()
-
+    session = requests.Session()
+    session.headers.update(HEADERS)
+    response = session.get(url, timeout=35)
+    response.raise_for_status()
+    html = response.text
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style", "nav", "footer", "header", "noscript"]):
         tag.decompose()
-    page_text = clean(soup.get_text(separator="\n", strip=True))
+    page_text = "\n".join(clean(x) for x in soup.stripped_strings if clean(x))
     links = {}
     for tag in soup.find_all(["a", "img"]):
         raw = tag.get("href") or tag.get("src") or tag.get("data-src") or ""
@@ -70,165 +87,233 @@ def fetch_page_assets(url):
         full = urljoin(url, raw)
         path = urlparse(full).path.lower()
         label = clean(tag.get_text(" ", strip=True)) if tag.name == "a" else clean(tag.get("alt", ""))
-        relevant = any(k in (label + " " + unquote(path)) for k in KEYWORDS)
-        if path.endswith(EXTENSIONS) and (relevant or path.endswith((".pdf",))):
+        if path.endswith(EXTENSIONS):
             links[full] = label or Path(path).name
 
     downloaded = []
-    session = requests.Session()
-    session.headers.update(HEADERS)
     for asset_url, label in list(links.items())[:MAX_ASSETS_PER_PAGE]:
         try:
-            response = session.get(asset_url, timeout=30, stream=True)
-            response.raise_for_status()
-            content = response.content
+            r = session.get(asset_url, timeout=40)
+            r.raise_for_status()
+            content = r.content
             if len(content) > MAX_ASSET_BYTES:
                 continue
             suffix = Path(urlparse(asset_url).path).suffix.lower()
-            if suffix not in EXTENSIONS:
-                continue
             if suffix == ".pdf" and not content.startswith(b"%PDF"):
                 continue
-            if suffix in (".png", ".jpg", ".jpeg", ".webp") and not response.headers.get("Content-Type", "").startswith("image/"):
+            if suffix in (".png", ".jpg", ".jpeg", ".webp") and not r.headers.get("Content-Type", "").startswith("image/"):
                 continue
-            digest = hashlib.sha256(content).hexdigest()[:16]
-            path = ASSET_DIR / (digest + suffix)
+            digest = hashlib.sha256(content).hexdigest()
+            path = ASSET_DIR / (digest[:16] + suffix)
             path.write_bytes(content)
-            downloaded.append({"path": path, "url": asset_url, "label": label, "sha256": hashlib.sha256(content).hexdigest()})
-            time.sleep(0.3)
+            downloaded.append({"path": path, "url": asset_url, "label": label, "sha256": digest})
+            time.sleep(0.15)
         except Exception as exc:
-            print("Asset download failed:", asset_url, str(exc)[:160])
-    return page_text[:20000], downloaded
+            print("Asset download failed:", asset_url, str(exc)[:120])
+    # JavaScript描画型ページだけPlaywrightで補完。通常ページはrequestsを優先して高速化。
+    if len(page_text) < 80:
+        try:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.goto(url, wait_until="domcontentloaded", timeout=25000)
+                page_text = "\n".join(x.strip() for x in page.locator("body").inner_text(timeout=10000).splitlines() if x.strip())
+                browser.close()
+        except Exception as exc:
+            print("Dynamic page fallback:", str(exc)[:120])
+    return page_text[:50000], downloaded
 
-def parse_with_gemini(client, municipality, page_url, page_text, assets):
-    uploads = []
-    contents = []
-    try:
-        for asset in assets:
-            uploaded = client.files.upload(file=str(asset["path"]))
-            uploads.append(uploaded)
-            contents.append(uploaded)
-        prompt = f"""
-あなたは自治体公式のごみ収集情報を正確に構造化する担当です。
-自治体: {municipality}
-公式ページ: {page_url}
-以下のページ本文と添付PDF・画像から、明記されている地区ごとの収集予定を抽出してください。
+def extract_asset_text(asset, ocr):
+    path = asset["path"]
+    suffix = path.suffix.lower()
+    chunks = []
+    if suffix == ".pdf":
+        try:
+            with pdfplumber.open(str(path)) as pdf:
+                for page_no, page in enumerate(pdf.pages, 1):
+                    text = page.extract_text(layout=False) or ""
+                    if text.strip():
+                        chunks.append((page_no, text))
+        except Exception as exc:
+            print("pdfplumber warning:", str(exc)[:120])
+        try:
+            doc = fitz.open(str(path))
+            for i, page in enumerate(doc):
+                if i + 1 <= len(chunks) and chunks[i][1].strip():
+                    continue
+                pix = page.get_pixmap(matrix=fitz.Matrix(1.6, 1.6), alpha=False)
+                img_path = ASSET_DIR / ("ocr_" + str(i) + ".png")
+                pix.save(str(img_path))
+                result, _ = ocr(str(img_path))
+                text = "\n".join(x[1] for x in result) if result else ""
+                img_path.unlink(missing_ok=True)
+                if text.strip():
+                    chunks.append((i + 1, text))
+            doc.close()
+        except Exception as exc:
+            print("PDF OCR warning:", str(exc)[:160])
+    else:
+        try:
+            result, _ = ocr(str(path))
+            text = "\n".join(x[1] for x in result) if result else ""
+            if text.strip():
+                chunks.append((1, text))
+        except Exception as exc:
+            print("Image OCR warning:", str(exc)[:120])
+    return chunks
 
-出力スキーマは areas 配列です。各要素は municipality, area_name, schedules を持ち、
-schedules の各要素は date, garbage_type, note を持ちます。
+DATE_PATTERNS = [
+    re.compile(r"(?<!\d)(20\d{2})[年./-](\d{1,2})[月./-](\d{1,2})日?"),
+    re.compile(r"(?<!\d)(20\d{2})(\d{2})(\d{2})(?!\d)"),
+]
+WEEKDAY_RULE = re.compile(r"(?:毎週|週\d回|第[1-5一二三四五]?[・、,と及び]*[1-5一二三四五]?)(?:月|火|水|木|金|土|日)(?:曜(?:日)?)?(?:[・、,／/と](?:月|火|水|木|金|土|日)(?:曜(?:日)?)?)*")
+GARBAGE_TERMS = [
+    "燃えるごみ", "燃やすごみ", "可燃ごみ", "燃えないごみ", "燃やさないごみ", "不燃ごみ",
+    "資源ごみ", "資源物", "びん", "かん", "缶", "ペットボトル", "古紙", "新聞紙", "段ボール",
+    "プラスチック", "容器包装プラ", "粗大ごみ", "有害ごみ", "危険ごみ"
+]
 
-重要なルール:
-- 年月日が明記されている予定だけ YYYY-MM-DD で出す。
-- 「毎週月・木」「第1・3水曜」などの規則は、date欄に原文どおり保存する。日付に展開しない。
-- 地区別情報は地区ごとに area_name を分ける。地区が不明なら「地区不明」。
-- 年が分からない日付は推測しない。
-- ごみ種別の表記は原資料を尊重する。
-- 休止日・祝日・注意書きを収集予定として扱わない。
-- 読み取れない情報は出力しない。重複させない。
-- ページに関係のないリンク先や情報は採用しない。
-
-ページ本文:
-{page_text}
-
-添付ファイル:
-{json.dumps([{"url":a["url"],"label":a["label"]} for a in assets],ensure_ascii=False)}
-"""
-        contents.append(prompt)
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=contents,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=ExtractionResult,
-                temperature=0.1,
-            ),
-        )
-        parsed = ExtractionResult.model_validate_json(response.text)
-        return parsed.areas
-    finally:
-        for uploaded in uploads:
+def explicit_dates(line):
+    found = []
+    for pat in DATE_PATTERNS:
+        for m in pat.finditer(line):
             try:
-                client.files.delete(name=uploaded.name)
-            except Exception as exc:
-                print("Temporary Gemini file cleanup warning:", str(exc)[:120])
+                if len(m.groups()) == 3:
+                    y, mo, d = map(int, m.groups())
+                else:
+                    raw = m.group(1)
+                    y, mo, d = int(raw[:4]), int(raw[4:6]), int(raw[6:8])
+                value = datetime(y, mo, d).strftime("%Y-%m-%d")
+                if value not in found:
+                    found.append(value)
+            except Exception:
+                pass
+    return found
+
+def terms_in(line):
+    return list(dict.fromkeys(t for t in GARBAGE_TERMS if t in line))
+
+def parse_text(municipality, page_url, page_text, asset_texts, ai):
+    events, rules, review = [], [], []
+    source_units = [("ページ本文", 0, page_text)]
+    for asset in asset_texts:
+        for page_no, txt in asset["pages"]:
+            source_units.append((asset["url"], page_no, txt))
+    seen = set()
+    for source_name, page_no, text in source_units:
+        lines = [clean(x) for x in text.splitlines() if clean(x)]
+        for i, line in enumerate(lines):
+            # ひとつの行の中だけで日付と品目を結び付ける。前後行の安易な結合はしない。
+            dates = explicit_dates(line)
+            terms = terms_in(line)
+            rule_match = WEEKDAY_RULE.search(line)
+            if not dates and not rule_match:
+                continue
+            if len(terms) == 1:
+                raw_type = terms[0]
+                normalized, confidence, uncertain = ai.classify(raw_type)
+            else:
+                raw_type, normalized, confidence, uncertain = "", "", 0.0, True
+            common = {
+                "municipality": municipality,
+                "district": "地区不明",
+                "type": normalized or raw_type or "品目未判定",
+                "note": line[:300],
+                "source_page": page_url,
+                "source_asset": source_name if source_name != "ページ本文" else "",
+                "source_page_number": page_no or None,
+                "verification": "要確認",
+                "engine": "BuiltIn-Lightweight-AI (v1.0)",
+            }
+            if len(terms) == 1 and not uncertain and dates and len(dates) == 1:
+                key = (dates[0], normalized, source_name, page_no, line)
+                if key not in seen:
+                    events.append({**common, "date": dates[0], "raw_type": raw_type, "confidence": round(confidence, 3)})
+                    seen.add(key)
+            elif len(terms) == 1 and not uncertain and rule_match and not dates:
+                key = (rule_match.group(0), normalized, source_name, page_no, line)
+                if key not in seen:
+                    rules.append({**common, "rule": rule_match.group(0), "raw_type": raw_type, "confidence": round(confidence, 3)})
+                    seen.add(key)
+            else:
+                review.append({
+                    **common,
+                    "raw_text": line[:500],
+                    "candidate_dates": dates,
+                    "candidate_types": terms,
+                    "reason": "日付・品目・地区の対応を一意に確定できないため",
+                })
+    return events, rules, review
 
 def main():
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        print("GEMINI_API_KEY is missing; extraction skipped.")
-        return
     sources = read_json(SOURCES, [])
     old_status = read_json(STATUS, {"pdfs": []})
     old_by_url = {x.get("page_url"): x for x in old_status.get("pdfs", [])}
-    existing = read_json(OUTPUT, {"events": [], "rules": []})
-    events = existing.get("events", [])
-    rules = existing.get("rules", [])
-    client = genai.Client(api_key=api_key)
+    existing = read_json(OUTPUT, {"events": [], "rules": [], "review_items": []})
+    events = list(existing.get("events", []))
+    rules = list(existing.get("rules", []))
+    review_items = list(existing.get("review_items", []))
     status_rows = []
+    ocr = RapidOCR()
+    ai = GarbageBuiltInAI()
 
     for source in sources:
         municipality = source.get("municipality", "")
         page_url = source.get("url", "")
+        if not municipality or not page_url:
+            continue
         row = {"municipality": municipality, "page_url": page_url}
         assets = []
         try:
             page_text, assets = fetch_page_assets(page_url)
+            asset_texts = []
+            for asset in assets:
+                pages = extract_asset_text(asset, ocr)
+                asset_texts.append({"url": asset["url"], "pages": pages})
             digest = hashlib.sha256((page_text + "".join(a["sha256"] for a in assets)).encode("utf-8")).hexdigest()
             row.update({"sha256": digest, "asset_count": len(assets)})
             old = old_by_url.get(page_url, {})
             if old.get("sha256") == digest and old.get("status") == "processed":
                 row["status"] = "processed_unchanged"
+                status_rows.append(row)
                 for asset in assets:
                     asset["path"].unlink(missing_ok=True)
-                status_rows.append(row)
                 continue
-            extracted = parse_with_gemini(client, municipality, page_url, page_text, assets)
-            # この公式ページ由来の旧データを置き換える
-            events = [e for e in events if e.get("source_page") != page_url]
-            rules = [e for e in rules if e.get("source_page") != page_url]
-            added_dates, added_rules = 0, 0
-            for area in extracted:
-                for schedule in area.schedules:
-                    date_value = clean(schedule.date)
-                    kind = clean(schedule.garbage_type)
-                    if not date_value or not kind:
-                        continue
-                    common = {
-                        "municipality": municipality,
-                        "district": clean(area.area_name) or "地区不明",
-                        "type": kind,
-                        "note": clean(schedule.note),
-                        "source_page": page_url,
-                        "verification": "要確認",
-                    }
-                    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_value):
-                        try:
-                            datetime.strptime(date_value, "%Y-%m-%d")
-                        except ValueError:
-                            continue
-                        events.append({**common, "date": date_value})
-                        added_dates += 1
-                    else:
-                        # ルール文はそのまま保持し、具体的な日付には変換しない
-                        rules.append({**common, "rule": date_value})
-                        added_rules += 1
-            row.update({"status": "processed", "date_events": added_dates, "rule_events": added_rules,
-                        "processed_at": datetime.now(timezone.utc).isoformat()})
-            for asset in assets:
-                try: asset["path"].unlink(missing_ok=True)
-                except Exception: pass
+
+            new_events, new_rules, new_review = parse_text(municipality, page_url, page_text, asset_texts, ai)
+            # 解析が正常終了した公式ページ分だけ差し替える。失敗時は既存データを保持。
+            events = [x for x in events if x.get("source_page") != page_url] + new_events
+            rules = [x for x in rules if x.get("source_page") != page_url] + new_rules
+            review_items = [x for x in review_items if x.get("source_page") != page_url] + new_review
+            row.update({
+                "status": "processed",
+                "date_events": len(new_events),
+                "rule_events": len(new_rules),
+                "review_items": len(new_review),
+                "processed_at": datetime.now(timezone.utc).isoformat(),
+            })
         except Exception as exc:
-            for asset in assets:
-                try: asset["path"].unlink(missing_ok=True)
-                except Exception: pass
             row.update({"status": "error", "error": str(exc)[:300]})
+        finally:
+            for asset in assets:
+                try:
+                    asset["path"].unlink(missing_ok=True)
+                except Exception:
+                    pass
         status_rows.append(row)
 
     timestamp = datetime.now(timezone.utc).isoformat()
     STATUS.write_text(json.dumps({"checked_at": timestamp, "pdfs": status_rows}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    OUTPUT.write_text(json.dumps({"updated_at": timestamp, "count": len(events), "events": events,
-                                  "rules_count": len(rules), "rules": rules}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print("Imported date events:", len(events), "recurring rules:", len(rules))
+    OUTPUT.write_text(json.dumps({
+        "updated_at": timestamp,
+        "count": len(events),
+        "events": events,
+        "rules_count": len(rules),
+        "rules": rules,
+        "review_count": len(review_items),
+        "review_items": review_items,
+    }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print("Imported events:", len(events), "rules:", len(rules), "review:", len(review_items))
 
 if __name__ == "__main__":
     main()
