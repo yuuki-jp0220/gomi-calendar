@@ -1,0 +1,39 @@
+name: Import official garbage collection dates
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: official-garbage-pdf-import
+  cancel-in-progress: true
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements-garbage-import.txt
+      - name: Discover PDFs and import dates
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scripts/import_official_garbage_pdfs.py
+      - name: Commit imported data
+        run: |
+          if [[ -n "$(git status --porcelain data/pdf-source-status.json data/imported-collection-dates.json)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+users.noreply.github.com"
+            git add data/pdf-source-status.json data/imported-collection-dates.json
+            git commit -m "Import official garbage collection dates"
+            git push
+          fi
