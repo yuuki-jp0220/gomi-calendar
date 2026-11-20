@@ -181,7 +181,7 @@ function renderIbarakiDirectory(){
  const q=$("ibarakiQuery").value.trim().toLowerCase();
  const items=ibarakiItems.filter(x=>x.name.toLowerCase().includes(q));
  $("ibarakiCount").textContent=items.length+" / "+ibarakiItems.length+" 市町村";
- $("ibarakiList").innerHTML=items.map(x=>'<div class="result"><b>'+escapeHtml(x.name)+'</b><small>収集日データ：未確認</small><a href="'+escapeHtml(x.official_site)+'" target="_blank" rel="noopener">公式サイトを開く</a></div>').join("")||'<p class="muted">該当する市町村がありません。</p>';
+ $("ibarakiList").innerHTML=items.map(x=>'<div class="result"><b>'+escapeHtml(x.name)+'</b><small>'+escapeHtml(x.calendar_status||"公式カレンダー未確認")+'</small><a href="'+escapeHtml(x.calendar_page||x.official_site)+'" target="_blank" rel="noopener">'+(x.calendar_page?"公式ごみカレンダーを開く":"自治体公式サイトを開く")+'</a></div>').join("")||'<p class="muted">該当する市町村がありません。</p>';
 }
 $("ibarakiQuery").addEventListener("input",renderIbarakiDirectory);
 renderManual();drawCalendar();loadIndex();
