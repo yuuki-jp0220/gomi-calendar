@@ -170,6 +170,7 @@ def main():
         municipality = source.get("municipality", "")
         page_url = source.get("url", "")
         row = {"municipality": municipality, "page_url": page_url}
+        assets = []
         try:
             page_text, assets = fetch_page_assets(page_url)
             digest = hashlib.sha256((page_text + "".join(a["sha256"] for a in assets)).encode("utf-8")).hexdigest()
@@ -177,6 +178,8 @@ def main():
             old = old_by_url.get(page_url, {})
             if old.get("sha256") == digest and old.get("status") == "processed":
                 row["status"] = "processed_unchanged"
+                for asset in assets:
+                    asset["path"].unlink(missing_ok=True)
                 status_rows.append(row)
                 continue
             extracted = parse_with_gemini(client, municipality, page_url, page_text, assets)
@@ -215,6 +218,9 @@ def main():
                 try: asset["path"].unlink(missing_ok=True)
                 except Exception: pass
         except Exception as exc:
+            for asset in assets:
+                try: asset["path"].unlink(missing_ok=True)
+                except Exception: pass
             row.update({"status": "error", "error": str(exc)[:300]})
         status_rows.append(row)
 
