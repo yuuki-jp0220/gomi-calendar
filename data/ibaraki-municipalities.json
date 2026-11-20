@@ -1,0 +1,273 @@
+{
+  "prefecture": "茨城県",
+  "count": 44,
+  "official_directory": "https://www.pref.ibaraki.jp/towns/",
+  "checked_against": "2026-11-20",
+  "note": "自治体公式サイトの入口一覧。収集日程の取得・検証が完了したことを意味しません。",
+  "municipalities": [
+    {
+      "name": "水戸市",
+      "official_site": "https://www.city.mito.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "日立市",
+      "official_site": "https://www.city.hitachi.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "土浦市",
+      "official_site": "https://www.city.tsuchiura.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "古河市",
+      "official_site": "https://www.city.ibaraki-koga.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "石岡市",
+      "official_site": "https://www.city.ishioka.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "結城市",
+      "official_site": "https://www.city.yuki.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "龍ケ崎市",
+      "official_site": "https://www.city.ryugasaki.ibaraki.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "下妻市",
+      "official_site": "https://www.city.shimotsuma.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "常総市",
+      "official_site": "https://www.city.joso.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "常陸太田市",
+      "official_site": "https://www.city.hitachiota.ibaraki.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "高萩市",
+      "official_site": "https://www.city.takahagi.ibaraki.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "北茨城市",
+      "official_site": "https://www.city.kitaibaraki.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "笠間市",
+      "official_site": "https://www.city.kasama.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "取手市",
+      "official_site": "https://www.city.toride.ibaraki.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "牛久市",
+      "official_site": "https://www.city.ushiku.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "つくば市",
+      "official_site": "https://www.city.tsukuba.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "ひたちなか市",
+      "official_site": "https://www.city.hitachinaka.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "鹿嶋市",
+      "official_site": "https://www.city.kashima.ibaraki.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "潮来市",
+      "official_site": "https://www.city.itako.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "守谷市",
+      "official_site": "https://www.city.moriya.ibaraki.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "常陸大宮市",
+      "official_site": "https://www.city.hitachiomiya.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "那珂市",
+      "official_site": "https://www.city.naka.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "筑西市",
+      "official_site": "https://www.city.chikusei.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "坂東市",
+      "official_site": "https://www.city.bando.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "稲敷市",
+      "official_site": "https://www.city.inashiki.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "かすみがうら市",
+      "official_site": "https://www.city.kasumigaura.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "桜川市",
+      "official_site": "https://www.city.sakuragawa.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "神栖市",
+      "official_site": "https://www.city.kamisu.ibaraki.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "行方市",
+      "official_site": "https://www.city.namegata.ibaraki.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "鉾田市",
+      "official_site": "https://www.city.hokota.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "つくばみらい市",
+      "official_site": "https://www.city.tsukubamirai.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "小美玉市",
+      "official_site": "https://www.city.omitama.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "茨城町",
+      "official_site": "https://www.town.ibaraki.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "大洗町",
+      "official_site": "https://www.town.oarai.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "城里町",
+      "official_site": "https://www.town.shirosato.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "東海村",
+      "official_site": "https://www.vill.tokai.ibaraki.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "大子町",
+      "official_site": "https://www.town.daigo.ibaraki.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "美浦村",
+      "official_site": "https://www.vill.miho.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "阿見町",
+      "official_site": "https://www.town.ami.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "河内町",
+      "official_site": "https://www.town.ibaraki-kawachi.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "八千代町",
+      "official_site": "https://www.town.ibaraki-yachiyo.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "五霞町",
+      "official_site": "https://www.town.goka.lg.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "境町",
+      "official_site": "https://www.town.sakai.ibaraki.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    },
+    {
+      "name": "利根町",
+      "official_site": "https://www.town.tone.ibaraki.jp/",
+      "calendar_status": "未確認",
+      "calendar_source": null
+    }
+  ]
+}
