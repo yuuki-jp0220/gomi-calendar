@@ -1,0 +1,14 @@
+[
+  {
+    "municipality": "土浦市",
+    "type": "official_calendar_index",
+    "url": "https://www.city.tsuchiura.lg.jp/kurashi-tetsuzuki/gomi-recycle/wakekata-dashikata/shushubi/page021314.html",
+    "note": "令和8年度・町名別ごみ収集カレンダー案内。公式ページの更新検知用。"
+  },
+  {
+    "municipality": "茨城町",
+    "type": "official_calendar_pdf",
+    "url": "https://www.town.ibaraki.lg.jp/manage/contents/upload/698537b122817.pdf",
+    "note": "令和8年度家庭ごみ収集カレンダー。公式PDFの更新検知用。"
+  }
+]
