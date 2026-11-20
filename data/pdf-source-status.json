@@ -1,4 +1,110 @@
 {
-  "checked_at": null,
-  "pdfs": []
+  "checked_at": "2026-11-20T21:34:40.797469+00:00",
+  "pdfs": [
+    {
+      "municipality": "水戸市",
+      "page_url": "https://www.city.mito.lg.jp/site/gomi/120306.html",
+      "sha256": "fef053928c6cac6069aae1d77906a54c70efe99afcd56ad8ac7ee28ddba6f36c",
+      "asset_count": 8,
+      "status": "processed",
+      "date_events": 0,
+      "rule_events": 0,
+      "review_items": 1,
+      "processed_at": "2026-11-20T21:32:18.819570+00:00"
+    },
+    {
+      "municipality": "日立市",
+      "page_url": "https://www.city.hitachi.lg.jp/kurashi_tetsuzuki/gomi_recycle/1002242/1009431.html",
+      "sha256": "73979d1e72d7bde3ca1fb9c8939d525da4af86a02033c51bb061457825a16511",
+      "asset_count": 8,
+      "status": "processed",
+      "date_events": 0,
+      "rule_events": 0,
+      "review_items": 8,
+      "processed_at": "2026-11-20T21:32:48.767864+00:00"
+    },
+    {
+      "municipality": "土浦市",
+      "page_url": "https://www.city.tsuchiura.lg.jp/kurashi-tetsuzuki/gomi-recycle/wakekata-dashikata/shushubi/page005681.html",
+      "sha256": "3e77074e9518de8f343b18bfd7297d87e7d439350c8c2e3ffa28655d9904230f",
+      "asset_count": 1,
+      "status": "processed",
+      "date_events": 0,
+      "rule_events": 0,
+      "review_items": 0,
+      "processed_at": "2026-11-20T21:32:51.610489+00:00"
+    },
+    {
+      "municipality": "取手市",
+      "page_url": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/g-calendar.html",
+      "sha256": "4ed99486fb832b471b04caf2b635ab7116452c6a97e4660eb68c99de66b3c22d",
+      "asset_count": 7,
+      "status": "processed",
+      "date_events": 0,
+      "rule_events": 0,
+      "review_items": 0,
+      "processed_at": "2026-11-20T21:33:49.714126+00:00"
+    },
+    {
+      "municipality": "龍ケ崎市",
+      "page_url": "https://www.city.ryugasaki.ibaraki.jp/kurashi/kankyo/gomi/oshirase/gomisyuusyuukarennda.html",
+      "sha256": "d3c77963c666c9ccbe1dbaf6f06748e94cf01a0f13973ff38543f16649fb9c80",
+      "asset_count": 8,
+      "status": "processed",
+      "date_events": 0,
+      "rule_events": 0,
+      "review_items": 0,
+      "processed_at": "2026-11-20T21:33:56.670615+00:00"
+    },
+    {
+      "municipality": "牛久市",
+      "page_url": "https://www.city.ushiku.lg.jp/garbage.php?mode=area",
+      "sha256": "607b87e77bd93b0bd51efb6755b123cac0659cd5e2537c4cfe0c76284950b11c",
+      "asset_count": 0,
+      "status": "processed",
+      "date_events": 0,
+      "rule_events": 0,
+      "review_items": 0,
+      "processed_at": "2026-11-20T21:33:58.390940+00:00"
+    },
+    {
+      "municipality": "つくば市",
+      "page_url": "https://www.city.tsukuba.lg.jp/kurashi/recycle/1000820.html",
+      "sha256": "6b6038ffefdbc399b298a0f0f0fdf9c1e50a2b2c2d171966cb8f86df7e414d5d",
+      "asset_count": 8,
+      "status": "processed",
+      "date_events": 0,
+      "rule_events": 0,
+      "review_items": 0,
+      "processed_at": "2026-11-20T21:34:21.845967+00:00"
+    },
+    {
+      "municipality": "鹿嶋市",
+      "page_url": "https://www.city.kashima.ibaraki.jp/site/shinsei/83368.html",
+      "sha256": "eb28a500489fd4c0d834ba5d404904318f3f31d592e5dc52c27c26827540da95",
+      "asset_count": 8,
+      "status": "processed",
+      "date_events": 0,
+      "rule_events": 0,
+      "review_items": 0,
+      "processed_at": "2026-11-20T21:34:34.617695+00:00"
+    },
+    {
+      "municipality": "守谷市",
+      "page_url": "https://www.city.moriya.ibaraki.jp/kurashi_tetsuzuki/kankyo_gomi/1002052/1002060.html",
+      "status": "error",
+      "error": "404 Client Error: Not Found for url: https://www.city.moriya.ibaraki.jp/kurashi_tetsuzuki/kankyo_gomi/1002052/1002060.html"
+    },
+    {
+      "municipality": "茨城町",
+      "page_url": "https://www.town.ibaraki.lg.jp/gyousei/kurashitetuduki/gomirisaikle/gomi/003836.html",
+      "sha256": "810298b14dc3d2c48bc164ca82b14128e66ca837ee5cd9d0fd9700bb0e5f1ca4",
+      "asset_count": 8,
+      "status": "processed",
+      "date_events": 0,
+      "rule_events": 0,
+      "review_items": 0,
+      "processed_at": "2026-11-20T21:34:40.797059+00:00"
+    }
+  ]
 }
