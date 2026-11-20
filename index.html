@@ -105,8 +105,9 @@ async function loadIbarakiMunicipalities(){
 }
 function renderResults(){
  const q=$("query").value.trim().toLowerCase(),p=$("pref").value;
+ if(!p&&!q){$("results").innerHTML="<p class=\\"muted\\">都道府県を選択するか、市区町村名を入力してください。</p>";return}
  const filtered=records.filter(r=>(!p||r.pref===p)&&(!q||[r.city,r.course,r.courseName,r.areas,r.pref].join(" ").toLowerCase().includes(q))).slice(0,100);
- const local=ibarakiMunicipalities.filter(x=>(!p||p==="茨城県")&&(!q||("茨城県 "+x.name).toLowerCase().includes(q)));
+ const local=ibarakiMunicipalities.filter(x=>(p==="茨城県")&&(!q||("茨城県 "+x.name).toLowerCase().includes(q)));
  const normalHtml=filtered.map(r=>'<button class="result" data-index="'+records.indexOf(r)+'"><b>'+escapeHtml(r.pref+"　"+r.city)+'</b><span>'+escapeHtml(r.courseName||r.course||"収集コース")+'</span><small>'+escapeHtml(r.areas||"対象地区の記載なし")+'</small></button>').join("");
  const localHtml=local.map(x=>{const count=importedCollectionEvents.filter(e=>e.municipality===x.name).length;const ruleCount=importedCollectionRules.filter(e=>e.municipality===x.name).length;return '<div class="result"><b>茨城県　'+escapeHtml(x.name)+'</b><small>'+((count||ruleCount)?("日付 "+count+" 件・収集ルール "+ruleCount+" 件（要確認）"):escapeHtml(x.calendar_status||"公式カレンダー未確認"))+'</small><button class="tab" data-import="'+escapeHtml(x.name)+'">抽出済み日程を表示</button> <a href="'+escapeHtml(x.calendar_page||x.official_site)+'" target="_blank" rel="noopener">公式資料</a></div>'}).join("");
  $("results").innerHTML=(normalHtml+localHtml)||'<p class="muted">該当する地域が見つかりません。町名の一部や市区町村名で検索してみてください。</p>';
