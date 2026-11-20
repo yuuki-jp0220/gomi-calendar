@@ -40,7 +40,7 @@ def read_json(path, default):
         return default
 
 def clean(value):
-    return re.sub(r"\\s+", " ", value or "").strip()
+    return re.sub(r"\s+", " ", value or "").strip()
 
 def fetch_page_assets(url):
     ASSET_DIR.mkdir(parents=True, exist_ok=True)
@@ -61,7 +61,7 @@ def fetch_page_assets(url):
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style", "nav", "footer", "header", "noscript"]):
         tag.decompose()
-    page_text = clean(soup.get_text(separator="\\n", strip=True))
+    page_text = clean(soup.get_text(separator="\n", strip=True))
     links = {}
     for tag in soup.find_all(["a", "img"]):
         raw = tag.get("href") or tag.get("src") or tag.get("data-src") or ""
@@ -198,7 +198,7 @@ def main():
                         "source_page": page_url,
                         "verification": "要確認",
                     }
-                    if re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", date_value):
+                    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", date_value):
                         try:
                             datetime.strptime(date_value, "%Y-%m-%d")
                         except ValueError:
@@ -219,9 +219,9 @@ def main():
         status_rows.append(row)
 
     timestamp = datetime.now(timezone.utc).isoformat()
-    STATUS.write_text(json.dumps({"checked_at": timestamp, "pdfs": status_rows}, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+    STATUS.write_text(json.dumps({"checked_at": timestamp, "pdfs": status_rows}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     OUTPUT.write_text(json.dumps({"updated_at": timestamp, "count": len(events), "events": events,
-                                  "rules_count": len(rules), "rules": rules}, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+                                  "rules_count": len(rules), "rules": rules}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("Imported date events:", len(events), "recurring rules:", len(rules))
 
 if __name__ == "__main__":
