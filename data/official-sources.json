@@ -1,14 +1,62 @@
 [
   {
+    "municipality": "水戸市",
+    "type": "official_calendar_index",
+    "url": "https://www.city.mito.lg.jp/site/gomi/120306.html",
+    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。"
+  },
+  {
+    "municipality": "日立市",
+    "type": "official_calendar_index",
+    "url": "https://www.city.hitachi.lg.jp/kurashi_tetsuzuki/gomi_recycle/1002242/1009431.html",
+    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。"
+  },
+  {
     "municipality": "土浦市",
     "type": "official_calendar_index",
-    "url": "https://www.city.tsuchiura.lg.jp/kurashi-tetsuzuki/gomi-recycle/wakekata-dashikata/shushubi/page021314.html",
-    "note": "令和8年度・町名別ごみ収集カレンダー案内。公式ページの更新検知用。"
+    "url": "https://www.city.tsuchiura.lg.jp/kurashi-tetsuzuki/gomi-recycle/wakekata-dashikata/shushubi/page005681.html",
+    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。"
+  },
+  {
+    "municipality": "取手市",
+    "type": "official_calendar_index",
+    "url": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/g-calendar.html",
+    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。"
+  },
+  {
+    "municipality": "龍ケ崎市",
+    "type": "official_calendar_index",
+    "url": "https://www.city.ryugasaki.ibaraki.jp/kurashi/kankyo/gomi/oshirase/gomisyuusyuukarennda.html",
+    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。"
+  },
+  {
+    "municipality": "牛久市",
+    "type": "official_calendar_index",
+    "url": "https://www.city.ushiku.lg.jp/garbage.php?mode=area",
+    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。"
+  },
+  {
+    "municipality": "つくば市",
+    "type": "official_calendar_index",
+    "url": "https://www.city.tsukuba.lg.jp/kurashi/recycle/1000820.html",
+    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。"
+  },
+  {
+    "municipality": "鹿嶋市",
+    "type": "official_calendar_index",
+    "url": "https://www.city.kashima.ibaraki.jp/site/shinsei/83368.html",
+    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。"
+  },
+  {
+    "municipality": "守谷市",
+    "type": "official_calendar_index",
+    "url": "https://www.city.moriya.ibaraki.jp/kurashi_tetsuzuki/kankyo_gomi/1002052/1002060.html",
+    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。"
   },
   {
     "municipality": "茨城町",
-    "type": "official_calendar_pdf",
-    "url": "https://www.town.ibaraki.lg.jp/manage/contents/upload/698537b122817.pdf",
-    "note": "令和8年度家庭ごみ収集カレンダー。公式PDFの更新検知用。"
+    "type": "official_calendar_index",
+    "url": "https://www.town.ibaraki.lg.jp/gyousei/kurashitetuduki/gomirisaikle/gomi/003836.html",
+    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。"
   }
 ]
