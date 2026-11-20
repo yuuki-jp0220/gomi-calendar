@@ -21,10 +21,12 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Install dependencies
-        run: pip install -r requirements-garbage-import.txt
-      - name: Discover PDFs and import dates
+        run: |
+          pip install -r requirements-garbage-import.txt
+          playwright install --with-deps chromium
+      - name: Discover official page assets and extract schedules
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: python scripts/import_official_garbage_pdfs.py
@@ -34,6 +36,6 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add data/pdf-source-status.json data/imported-collection-dates.json
-            git commit -m "Import official garbage collection dates"
+            git commit -m "Import official garbage collection schedules"
             git push
           fi
