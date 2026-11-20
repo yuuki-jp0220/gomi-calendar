@@ -138,8 +138,9 @@ def extract_asset_text(asset, ocr):
             print("pdfplumber warning:", str(exc)[:120])
         try:
             doc = fitz.open(str(path))
+            text_page_numbers = {page_no for page_no, _ in chunks}
             for i, page in enumerate(doc):
-                if i + 1 <= len(chunks) and chunks[i][1].strip():
+                if i + 1 in text_page_numbers:
                     continue
                 pix = page.get_pixmap(matrix=fitz.Matrix(1.6, 1.6), alpha=False)
                 img_path = ASSET_DIR / ("ocr_" + str(i) + ".png")
@@ -270,10 +271,12 @@ def main():
             for asset in assets:
                 pages = extract_asset_text(asset, ocr)
                 asset_texts.append({"url": asset["url"], "pages": pages})
+            if not page_text.strip() and not assets:
+                raise RuntimeError("公式ページから本文・添付資料を取得できませんでした")
             digest = hashlib.sha256((page_text + "".join(a["sha256"] for a in assets)).encode("utf-8")).hexdigest()
             row.update({"sha256": digest, "asset_count": len(assets)})
             old = old_by_url.get(page_url, {})
-            if old.get("sha256") == digest and old.get("status") == "processed":
+            if old.get("sha256") == digest and old.get("status") in ("processed", "processed_unchanged"):
                 row["status"] = "processed_unchanged"
                 status_rows.append(row)
                 for asset in assets:
