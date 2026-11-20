@@ -1,23 +1,166 @@
-<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#176b55"><title>ごみ出しカレンダー</title><style>
-:root{font-family:system-ui,"Noto Sans JP",sans-serif;color:#18332c;background:#f3f7f5}*{box-sizing:border-box}body{margin:0}header{background:#176b55;color:white;padding:22px max(16px,calc((100% - 850px)/2))}main{max-width:850px;margin:18px auto;padding:0 14px}.card{background:white;border:1px solid #dce8e2;border-radius:16px;padding:16px;margin:12px 0}button{border:0;border-radius:10px;background:#176b55;color:white;padding:10px 14px;font:inherit;cursor:pointer}button.alt{background:#e7f3ed;color:#176b55}input,select{padding:10px;border:1px solid #cbdad2;border-radius:9px;font:inherit;max-width:100%}.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.day{background:#f7faf8;border:1px solid #dce8e2;border-radius:9px;min-height:70px;padding:6px 2px;text-align:center;font-size:13px}.day.today{outline:2px solid #176b55}.tag{display:block;color:#176b55;font-size:11px;overflow-wrap:anywhere}.muted{color:#71847c;font-size:13px}.tab{background:#e7f3ed;color:#176b55}.tab.on{background:#176b55;color:white}.hidden{display:none}label{font-size:13px;margin:5px;display:inline-block}.item{display:flex;justify-content:space-between;border-bottom:1px solid #e3ece7;padding:9px 0;gap:8px}</style>
-<header><small>DAILY LIFE / WASTE MANAGEMENT</small><h1>ごみ出しカレンダー</h1><div id="today"></div></header><main><nav class="row"><button class="tab on" data-tab="cal">カレンダー</button><button class="tab" data-tab="rules">収集ルール</button><button class="tab" data-tab="settings">設定・データ</button></nav>
-<section id="cal"><div class="card"><div class="row" style="justify-content:space-between"><button class="alt" id="prev">‹ 前月</button><b id="month"></b><button class="alt" id="next">翌月 ›</button></div><div class="grid" id="calendar" style="margin-top:12px"></div></div><div class="card"><b id="picked"></b><div id="pickedList" class="muted"></div><hr><b>今後7日間</b><div id="upcoming"></div></div></section>
-<section id="rules" class="hidden"><div class="card"><h3>毎週の収集ルール</h3><label>種類 <input id="kind" placeholder="燃えるごみ"></label><div>曜日：<br><label><input type="checkbox" class="wd" value="0">日</label><label><input type="checkbox" class="wd" value="1">月</label><label><input type="checkbox" class="wd" value="2">火</label><label><input type="checkbox" class="wd" value="3">水</label><label><input type="checkbox" class="wd" value="4">木</label><label><input type="checkbox" class="wd" value="5">金</label><label><input type="checkbox" class="wd" value="6">土</label></div><label>繰り返し <select id="repeat"><option value="weekly">毎週</option><option value="first">第1週</option><option value="second">第2週</option><option value="third">第3週</option><option value="fourth">第4週</option><option value="fifth">第5週</option><option value="last">最終週</option></select></label><label>メモ <input id="memo" placeholder="朝8時まで"></label><button id="add">ルールを追加</button><div id="rulesList"></div></div><div class="card"><h3>臨時予定</h3><label>日付 <input type="date" id="extraDate"></label><label>種類 <input id="extraKind" placeholder="資源ごみ"></label><button id="addExtra">追加</button><div id="extras"></div></div></section>
-<section id="settings" class="hidden"><div class="card"><h3>通知設定</h3><label><input type="checkbox" id="notify"> 前日に通知する</label><label>通知時刻 <input type="time" id="notifyTime" value="19:00"></label><button id="allow" class="alt">通知を許可</button><p class="muted">ページを開いている間に通知を確認します。閉じている間の通知は保証されません。自治体の祝日・年末年始の変更は臨時予定で調整してください。</p><div id="status" class="muted"></div></div><div class="card"><h3>データ管理</h3><button id="export" class="alt">書き出し</button><label>読み込み <input type="file" id="import" accept="application/json"></label><button id="reset" style="background:#b33d36">全消去</button><p class="muted">データはこのブラウザ内に保存されます。端末間同期はありません。</p></div></section></main>
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123f3a">
+<title>全国ごみ収集カレンダー</title>
+<style>
+:root{color-scheme:light;--bg:#f3f6f5;--paper:#fff;--ink:#18312e;--muted:#71827e;--line:#dce6e2;--green:#176b58;--soft:#e8f3ef;--orange:#a65b18}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+header{background:linear-gradient(120deg,#123f3a,#1d7560);color:#fff;padding:24px max(16px,calc((100% - 980px)/2))}
+header small{opacity:.8;letter-spacing:.12em}h1{margin:7px 0;font-size:clamp(23px,5vw,34px)}header p{margin:5px 0 0;color:#d6e9e3;font-size:14px}
+main{max-width:980px;margin:18px auto;padding:0 14px 50px}.tabs{display:flex;gap:7px;overflow:auto;padding:2px 0 10px}
+button,.tab{border:0;border-radius:10px;padding:11px 14px;font:inherit;cursor:pointer;background:var(--green);color:#fff}
+.tab{white-space:nowrap;background:#e2ebe7;color:#31544b}.tab.on{background:var(--green);color:white}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;margin:10px 0;box-shadow:0 3px 12px #163d3210}
+h2{font-size:19px;margin:0 0 12px}h3{font-size:16px;margin:4px 0 10px}
+input,select{font:inherit;border:1px solid #cbd9d3;border-radius:10px;padding:11px;background:white;color:var(--ink);max-width:100%;min-width:0}
+input:focus,select:focus{outline:2px solid #86bbaa;border-color:var(--green)}
+.row{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.grow{flex:1;min-width:190px}.muted{font-size:13px;color:var(--muted);line-height:1.6}
+.hidden{display:none!important}.results{display:grid;gap:8px;margin-top:12px}.result{border:1px solid var(--line);border-radius:12px;padding:12px;text-align:left;background:#fff;color:var(--ink);width:100%}.result b{display:block;color:var(--green)}.result small{display:block;color:var(--muted);margin-top:4px}
+.pill{display:inline-block;border-radius:30px;padding:3px 9px;background:var(--soft);color:var(--green);font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.weekday{text-align:center;color:var(--muted);font-size:12px;padding:6px 0}.day{min-height:78px;border:1px solid var(--line);border-radius:9px;padding:5px;background:#fbfdfc;font-size:12px;overflow:hidden}.day.out{opacity:.4}.day.today{outline:2px solid var(--green)}.day .num{font-weight:700}.event{display:block;background:#e3f2ec;color:#155d4c;border-radius:5px;padding:3px;margin-top:4px;overflow-wrap:anywhere;font-size:11px}
+.item{padding:10px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;justify-content:space-between;align-items:center}.item:last-child{border:0}
+.notice{border-left:4px solid var(--orange);background:#fff7ed;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.6}
+footer{max-width:980px;margin:0 auto;padding:0 14px 30px;color:var(--muted);font-size:12px;line-height:1.7}a{color:#176b58}
+@media(max-width:520px){.day{min-height:66px;padding:4px 2px}.event{font-size:10px;padding:2px}.card{padding:13px}}
+</style>
+</head>
+<body>
+<header><small>LOCAL LIFE / WASTE CALENDAR</small><h1>全国ごみ収集カレンダー</h1><p>自治体・地区を探して、収集日をカレンダーで確認。</p></header>
+<main>
+<nav class="tabs"><button class="tab on" data-tab="search">地域を探す</button><button class="tab" data-tab="calendar">カレンダー</button><button class="tab" data-tab="manual">手動予定</button></nav>
+<section id="search">
+<div class="card">
+<h2>お住まいの地域を検索</h2>
+<div class="row"><select id="pref" class="grow"><option value="">すべての都道府県</option></select><input id="query" class="grow" placeholder="市区町村・町名・コース名で検索"></div>
+<p class="muted" id="loadState">全国データを読み込み中…</p>
+<div id="results" class="results"></div>
+</div>
+<div class="card">
+<h3>データの範囲について</h3>
+<p class="muted">現在公開されているオープンデータを検索できます。全国すべての自治体が収録されているわけではありません。検索結果がない地域は、未対応またはデータ未公開の可能性があります。</p>
+<div class="notice">収集日程は元データの対象期間内だけ表示します。未発表・不明な期間を曜日から推測して埋めることはしません。実際に出す前に自治体の最新案内も確認してください。</div>
+</div>
+</section>
+<section id="calendar" class="hidden">
+<div class="card">
+<div class="row" style="justify-content:space-between"><button id="prev">‹ 前月</button><b id="month"></b><button id="next">翌月 ›</button></div>
+<p id="selectedArea" class="muted">先に「地域を探す」から自治体・地区を選択してください。</p>
+<div class="grid" id="calGrid"></div>
+</div>
+<div class="card"><h3 id="dayTitle">収集予定</h3><div id="dayEvents" class="muted">日付を選ぶと予定が表示されます。</div><h3 style="margin-top:18px">今後7日間</h3><div id="upcoming" class="muted">地域を選択してください。</div></div>
+<div class="card"><p class="muted">データ提供：<a href="https://github.com/tecolicom/japan-gomi-data" target="_blank" rel="noopener">japan-gomi-data</a>（CC BY 4.0）。自治体公式資料をもとに整理されたデータです。出典・ライセンス・更新状況は提供元で確認できます。</p></div>
+</section>
+<section id="manual" class="hidden">
+<div class="card"><h2>手動の予定を追加</h2><p class="muted">全国データにない地域や、家庭独自の予定を登録できます。予定はこのブラウザ内に保存されます。</p>
+<div class="row"><input id="manualDate" type="date" class="grow"><input id="manualName" class="grow" placeholder="例：燃えるごみ"></div><div class="row" style="margin-top:10px"><input id="manualMemo" class="grow" placeholder="メモ（任意）"><button id="addManual">追加</button></div><div id="manualList"></div>
+</div>
+<div class="card"><h3>データの保存</h3><p class="muted">手動予定はこの端末のブラウザに保存されます。ブラウザのデータを消すと失われる場合があります。</p><button id="exportManual">手動予定を書き出す</button> <label class="muted">読み込み <input id="importManual" type="file" accept="application/json"></label></div>
+</section>
+</main>
+<footer>
+<p>参考：<a href="https://gomi-cal.jp/" target="_blank" rel="noopener">ごみカレンダー.jp</a>（自治体・地区・町名・対象年度を確認するための参考サイト）</p>
+<p>このページは非公式の検索・表示ツールです。収集日・分別方法の最終確認は、お住まいの自治体の公式情報で行ってください。</p>
+</footer>
 <script>
-const $=x=>document.getElementById(x),D=["日","月","火","水","木","金","土"];let db=JSON.parse(localStorage.gomiData||'{"rules":[],"extras":[]}'),v=new Date(),sel=new Date();sel.setHours(0,0,0,0);$("today").textContent=new Date().toLocaleDateString("ja-JP",{dateStyle:"full"});
-function list(y,m){let a=[];db.rules.forEach(r=>{for(let d=1;d<=new Date(y,m+1,0).getDate();d++){let x=new Date(y,m,d),w=Math.ceil(d/7),last=d+7>new Date(y,m+1,0).getDate();if(r.days.includes(x.getDay())&&(r.rep==="weekly"||r.rep==="last"&&last||r.rep!=="last"&&r.rep!=="weekly"&&Number(r.rep)===w))a.push({date:x,kind:r.kind,memo:r.memo,id:r.id})}});db.extras.forEach(e=>{let x=new Date(e.date+"T00:00:00");if(x.getFullYear()===y&&x.getMonth()===m)a.push({...e,date:x,extra:true})});return a.sort((a,b)=>a.date-b.date)}
-const same=(a,b)=>a.toDateString()===b.toDateString(),save=()=>localStorage.gomiData=JSON.stringify(db);
-function chosen(){let a=list(sel.getFullYear(),sel.getMonth()).filter(x=>same(x.date,sel));$("picked").textContent=sel.toLocaleDateString("ja-JP",{dateStyle:"full"});$("pickedList").innerHTML=a.length?a.map(x=>"<div class=item>"+x.kind+" <span>"+(x.memo||"")+"</span></div>").join(""):"予定なし"}
-function draw(){let y=v.getFullYear(),m=v.getMonth(),first=new Date(y,m,1),start=new Date(y,m,1-first.getDay());$("month").textContent=y+"年 "+(m+1)+"月";let h=D.map(x=>'<div class=muted style="text-align:center">'+x+"</div>").join("");for(let i=0;i<42;i++){let x=new Date(start);x.setDate(start.getDate()+i);let a=list(y,m).filter(q=>same(q.date,x));h+='<div class="day '+(same(x,new Date())?"today":"")+'" data-date="'+[x.getFullYear(),String(x.getMonth()+1).padStart(2,"0"),String(x.getDate()).padStart(2,"0")).join("-")+'"><b>'+x.getDate()+"</b>"+a.map(q=>'<span class=tag>'+q.kind+"</span>").join("")+"</div>"}$("calendar").innerHTML=h;$("calendar").querySelectorAll(".day").forEach(e=>e.onclick=()=>{sel=new Date(e.dataset.date+"T00:00:00");chosen()});chosen();let up=[];for(let i=0;i<7;i++){let x=new Date();x.setDate(x.getDate()+i);up.push(...list(x.getFullYear(),x.getMonth()).filter(q=>same(q.date,x)))}$("upcoming").innerHTML=up.length?up.map(x=>'<div class=item>'+x.date.toLocaleDateString("ja-JP",{month:"numeric",day:"numeric",weekday:"short"})+"　<b>"+x.kind+"</b></div>").join(""):"予定なし"}
-function manage(){$("rulesList").innerHTML=db.rules.map(r=>'<div class=item><span>'+r.kind+" / "+r.days.map(x=>D[x]).join("・")+" / "+(r.rep==="weekly"?"毎週":r.rep==="last"?"最終週":"第"+r.rep+"週")+'</span><button onclick="delRule(\''+r.id+'\')">削除</button></div>').join("")||"登録なし";$("extras").innerHTML=db.extras.map(e=>'<div class=item>'+e.date+" "+e.kind+' <button onclick="delExtra(\''+e.id+'\')">削除</button></div>').join("")}
-window.delRule=id=>{db.rules=db.rules.filter(x=>x.id!==id);save();manage();draw()};window.delExtra=id=>{db.extras=db.extras.filter(x=>x.id!==id);save();manage();draw()};
-$("add").onclick=()=>{let kind=$("kind").value.trim(),days=[...document.querySelectorAll(".wd:checked")].map(x=>+x.value);if(!kind||!days.length)return alert("種類と曜日を選んでください");db.rules.push({id:crypto.randomUUID(),kind,days,rep:$("repeat").value,memo:$("memo").value});save();$("kind").value="";document.querySelectorAll(".wd").forEach(x=>x.checked=false);manage();draw()};
-$("addExtra").onclick=()=>{if(!$("extraDate").value||!$("extraKind").value.trim())return alert("日付と種類を入力してください");db.extras.push({id:crypto.randomUUID(),date:$("extraDate").value,kind:$("extraKind").value});save();manage();draw()};
-$("prev").onclick=()=>{v.setMonth(v.getMonth()-1);draw()};$("next").onclick=()=>{v.setMonth(v.getMonth()+1);draw()};document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));["cal","rules","settings"].forEach(x=>$(x).classList.toggle("hidden",x!==b.dataset.tab))});
-$("notify").checked=localStorage.gomiNotify==="1";$("notifyTime").value=localStorage.gomiNotifyTime||"19:00";$("notify").onchange=e=>localStorage.gomiNotify=e.target.checked?"1":"0";$("notifyTime").onchange=e=>localStorage.gomiNotifyTime=e.target.value;$("allow").onclick=async()=>{if(!("Notification"in window))return alert("通知非対応です");$("status").textContent="通知："+await Notification.requestPermission()};
-let sent="";setInterval(()=>{if(!$("notify").checked||Notification.permission!=="granted")return;let n=new Date();if(n.getHours()+":"+String(n.getMinutes()).padStart(2,"0")!==$("notifyTime").value)return;let t=new Date();t.setDate(t.getDate()+1);let a=list(t.getFullYear(),t.getMonth()).filter(x=>same(x.date,t));if(a.length&&sent!==t.toDateString()){new Notification("明日のごみ出し",{body:a.map(x=>x.kind).join("・")});sent=t.toDateString()}},30000);
-$("export").onclick=()=>{let a=document.createElement("a"),u=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:"application/json"}));a.href=u;a.download="gomi-data.json";a.click();URL.revokeObjectURL(u)};
-$("import").onchange=async e=>{try{let x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x.rules)||!Array.isArray(x.extras))throw 0;db=x;save();manage();draw()}catch{alert("読み込み失敗")}};
-$("reset").onclick=()=>{if(confirm("すべて削除しますか？")){db={rules:[],extras:[]};save();manage();draw()}};manage();draw();
-</script></html>
+const INDEX_URL="https://tecolicom.github.io/japan-gomi-data/ics/index.csv";
+const $=id=>document.getElementById(id);
+let records=[],active=null,events=[],month=new Date(),picked=new Date();picked.setHours(0,0,0,0);
+let manual=JSON.parse(localStorage.getItem("gomiManualV2")||"[]");
+const jpDays=["日","月","火","水","木","金","土"];
+function csvParse(text){
+ const rows=[];let row=[],cell="",quoted=false;
+ for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];
+  if(quoted){if(c==='"'&&n==='"'){cell+='"';i++}else if(c==='"')quoted=false;else cell+=c}
+  else if(c==='"')quoted=true;else if(c===","){row.push(cell);cell=""}else if(c==="\n"){row.push(cell.replace(/\r$/,""));if(row.some(v=>v.trim()))rows.push(row);row=[];cell=""}else cell+=c;
+ }
+ if(cell.length||row.length){row.push(cell.replace(/\r$/,""));rows.push(row)}
+ return rows;
+}
+function normalizeRecord(row,idx){
+ const get=(...names)=>{for(const n of names){const i=idx[n];if(i!==undefined)return row[i]||""}return ""};
+ return {code:get("団体コード","自治体コード"),pref:get("都道府県"),handle:get("handle"),city:get("自治体名"),course:get("コース"),courseName:get("コース名"),areas:get("対象地区"),ics:get("ICS URL","ICS URL ")}; 
+}
+async function loadIndex(){
+ try{
+  const res=await fetch(INDEX_URL,{cache:"no-store"});if(!res.ok)throw Error("HTTP "+res.status);
+  const text=await res.text(),rows=csvParse(text.replace(/^\uFEFF/,""));if(rows.length<2)throw Error("CSVにデータがありません");
+  const idx={};rows[0].forEach((h,i)=>idx[h.trim()]=i);
+  records=rows.slice(1).map(r=>normalizeRecord(r,idx)).filter(r=>r.city&&r.pref&&r.ics);
+  const prefs=[...new Set(records.map(r=>r.pref))].sort((a,b)=>a.localeCompare(b,"ja"));
+  $("pref").innerHTML='<option value="">すべての都道府県</option>'+prefs.map(p=>'<option>'+escapeHtml(p)+'</option>').join("");
+  $("loadState").textContent=records.length.toLocaleString()+" 件の収集コースを読み込みました。都道府県・市区町村・町名で検索できます。";
+  renderResults();
+ }catch(e){$("loadState").textContent="全国データを読み込めませんでした："+e.message+"。通信環境を確認するか、提供元のページを開いてください。";$("results").innerHTML='<a href="https://tecolicom.github.io/japan-gomi-data/" target="_blank" rel="noopener">オープンデータ提供元を開く</a>'}
+}
+function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function renderResults(){
+ const q=$("query").value.trim().toLowerCase(),p=$("pref").value;
+ const filtered=records.filter(r=>(!p||r.pref===p)&&(!q||[r.city,r.course,r.courseName,r.areas,r.pref].join(" ").toLowerCase().includes(q))).slice(0,100);
+ $("results").innerHTML=filtered.length?filtered.map((r,i)=>'<button class="result" data-index="'+records.indexOf(r)+'"><b>'+escapeHtml(r.pref+"　"+r.city)+'</b><span>'+escapeHtml(r.courseName||r.course||"収集コース")+'</span><small>'+escapeHtml(r.areas||"対象地区の記載なし")+'</small></button>').join(""):'<p class="muted">該当する地域が見つかりません。町名の一部や市区町村名で検索してみてください。</p>';
+ $("results").querySelectorAll("[data-index]").forEach(b=>b.onclick=()=>choose(records[Number(b.dataset.index)]));
+}
+$("query").addEventListener("input",renderResults);$("pref").addEventListener("change",renderResults);
+function decodeIcs(s){return (s||"").replace(/\\n/gi," ").replace(/\\,/g,",").replace(/\\;/g,";").replace(/\\\\/g,"\\")}
+function parseIcs(text){
+ const lines=text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n"),unfold=[];
+ for(const line of lines){if(/^[ \t]/.test(line)&&unfold.length)unfold[unfold.length-1]+=line.slice(1);else unfold.push(line)}
+ const out=[];let cur=null;
+ for(const line of unfold){
+  if(line==="BEGIN:VEVENT"){cur={};continue}
+  if(line==="END:VEVENT"){if(cur&&cur.date&&cur.summary)out.push(cur);cur=null;continue}
+  if(!cur)continue;
+  const pos=line.indexOf(":");if(pos<0)continue;
+  const key=line.slice(0,pos).split(";")[0].toUpperCase(),val=line.slice(pos+1);
+  if(key==="DTSTART"){const m=val.match(/(\d{4})(\d{2})(\d{2})/);if(m)cur.date=m[1]+"-"+m[2]+"-"+m[3]}
+  if(key==="SUMMARY")cur.summary=decodeIcs(val);
+  if(key==="DESCRIPTION")cur.description=decodeIcs(val);
+  if(key==="URL")cur.url=val;
+  if(key==="STATUS"&&val==="CANCELLED")cur.cancelled=true;
+ }
+ return out.filter(e=>!e.cancelled).sort((a,b)=>a.date.localeCompare(b.date));
+}
+async function choose(r){
+ active=r;events=[];$("selectedArea").textContent=r.pref+" / "+r.city+" / "+(r.courseName||r.course)+" / "+(r.areas||"対象地区の記載なし");
+ $("loadState").textContent="収集日程を読み込み中…";
+ document.querySelector('[data-tab="calendar"]').click();
+ try{
+  let url=r.ics.trim();if(!/^https?:\/\//i.test(url))url="https://tecolicom.github.io/japan-gomi-data/"+url.replace(/^\//,"");
+  const res=await fetch(url,{cache:"no-store"});if(!res.ok)throw Error("HTTP "+res.status);
+  events=parseIcs(await res.text());$("selectedArea").textContent+="　｜　"+events.length+" 件の日程を取得";
+  month=new Date();month.setDate(1);picked=new Date();picked.setHours(0,0,0,0);drawCalendar();
+ }catch(e){$("selectedArea").textContent+="　｜　読み込み失敗："+e.message;$("dayEvents").textContent="このコースのカレンダーを読み込めませんでした。提供元の一覧から確認してください。";$("upcoming").textContent="";drawCalendar()}
+}
+function dateKey(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function allEvents(){return [...events,...manual.map(x=>({date:x.date,summary:x.name,description:x.memo,manual:true}))].sort((a,b)=>a.date.localeCompare(b.date))}
+function drawCalendar(){
+ $("month").textContent=month.getFullYear()+"年 "+(month.getMonth()+1)+"月";
+ const first=new Date(month.getFullYear(),month.getMonth(),1),start=new Date(first);start.setDate(1-first.getDay());
+ let html=jpDays.map(d=>'<div class="weekday">'+d+'</div>').join("");
+ const all=allEvents();
+ for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const key=dateKey(d),items=all.filter(e=>e.date===key);
+ html+='<div class="day '+(d.getMonth()!==month.getMonth()?"out ":"")+(key===dateKey(new Date())?"today":"")+'" data-date="'+key+'"><span class="num">'+d.getDate()+'</span>'+items.slice(0,3).map(e=>'<span class="event">'+escapeHtml(e.summary)+'</span>').join("")+(items.length>3?'<span class="event">+'+(items.length-3)+'</span>':"")+'</div>';
+ }
+ $("calGrid").innerHTML=html;$("calGrid").querySelectorAll("[data-date]").forEach(el=>el.onclick=()=>{picked=new Date(el.dataset.date+"T00:00:00");showDay()});showDay();showUpcoming();
+}
+function showDay(){
+ const key=dateKey(picked),items=allEvents().filter(e=>e.date===key);
+ $("dayTitle").textContent=picked.toLocaleDateString("ja-JP",{dateStyle:"full"});
+ $("dayEvents").innerHTML=items.length?items.map(e=>'<div class="item"><span><b>'+escapeHtml(e.summary)+'</b>'+(e.description?'<br><small class="muted">'+escapeHtml(e.description)+'</small>':"")+'</span>'+(e.manual?'<span class="pill">手動</span>':"")+'</div>').join(""):'<span class="muted">登録された収集予定はありません（未収録・不明期間の場合もあります）。</span>';
+}
+function showUpcoming(){
+ const base=new Date();base.setHours(0,0,0,0);const end=new Date(base);end.setDate(end.getDate()+7);
+ const a=allEvents().filter(e=>{const d=new Date(e.date+"T00:00:00");return d>=base&&d<end});
+ $("upcoming").innerHTML=a.length?a.map(e=>'<div class="item"><span>'+new Date(e.date+"T00:00:00").toLocaleDateString("ja-JP",{month:"numeric",day:"numeric",weekday:"short"})+'</span><b>'+escapeHtml(e.summary)+'</b></div>').join(""):'<span class="muted">今後7日間に登録された予定はありません。</span>';
+}
+$("prev").onclick=()=>{month.setMonth(month.getMonth()-1);drawCalendar()};$("next").onclick=()=>{month.setMonth(month.getMonth()+1);drawCalendar()};
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));["search","calendar","manual"].forEach(id=>$(id).classList.toggle("hidden",id!==b.dataset.tab));if(b.dataset.tab==="calendar")drawCalendar()});
+function saveManual(){localStorage.setItem("gomiManualV2",JSON.stringify(manual));renderManual();drawCalendar()}
+function renderManual(){$("manualList").innerHTML=manual.length?manual.slice().sort((a,b)=>a.date.localeCompare(b.date)).map((x,i)=>'<div class="item"><span>'+escapeHtml(x.date+"　"+x.name)+(x.memo?"<small class=muted><br>"+escapeHtml(x.memo)+"</small>":"")+'</span><button data-del="'+i+'" class="tab">削除</button></div>').join(""):'<p class="muted">手動予定はありません。</p>';$("manualList").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{manual.splice(Number(b.dataset.del),1);saveManual()})}
+$("addManual").onclick=()=>{const date=$("manualDate").value,name=$("manualName").value.trim();if(!date||!name){alert("日付と予定名を入力してください");return}manual.push({date,name,memo:$("manualMemo").value.trim()});$("manualName").value="";$("manualMemo").value="";saveManual()};
+$("exportManual").onclick=()=>{const a=document.createElement("a"),u=URL.createObjectURL(new Blob([JSON.stringify(manual,null,2)],{type:"application/json"}));a.href=u;a.download="gomi-manual.json";a.click();URL.revokeObjectURL(u)};
+$("importManual").onchange=async e=>{try{const x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x)||x.some(v=>!v.date||!v.name))throw Error();manual=x;saveManual()}catch{alert("ファイルを読み込めませんでした")}};
+renderManual();drawCalendar();loadIndex();
+</script>
+</body></html>
