@@ -22,13 +22,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install dependencies
+      - name: Install lightweight dependencies
         run: |
           pip install -r requirements-garbage-import.txt
           playwright install --with-deps chromium
-      - name: Discover official page assets and extract schedules
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      - name: Discover official pages and extract schedules with built-in AI
         run: python scripts/import_official_garbage_pdfs.py
       - name: Commit imported data
         run: |
