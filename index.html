@@ -49,7 +49,7 @@ footer{max-width:980px;margin:0 auto;padding:0 14px 30px;color:var(--muted);font
 <p id="selectedArea" class="muted">先に「地域を探す」から自治体・地区を選択してください。</p>
 <div class="grid" id="calGrid"></div>
 </div>
-<div class="card"><h3 id="dayTitle">収集予定</h3><div id="dayEvents" class="muted">日付を選ぶと予定が表示されます。</div><h3 style="margin-top:18px">今後7日間</h3><div id="upcoming" class="muted">地域を選択してください。</div></div>
+<div class="card"><h3 id="dayTitle">収集予定</h3><div id="dayEvents" class="muted">日付を選ぶと予定が表示されます。</div><h3 style="margin-top:18px">収集曜日・定期ルール</h3><div id="importedRules" class="muted">地域を選択してください。</div><h3 style="margin-top:18px">今後7日間</h3><div id="upcoming" class="muted">地域を選択してください。</div></div>
 <div class="card"><p class="muted">データ提供：<a href="https://github.com/tecolicom/japan-gomi-data" target="_blank" rel="noopener">japan-gomi-data</a>（CC BY 4.0）。自治体公式資料をもとに整理されたデータです。出典・ライセンス・更新状況は提供元で確認できます。</p></div>
 </section>
 <section id="manual" class="hidden">
@@ -66,7 +66,7 @@ footer{max-width:980px;margin:0 auto;padding:0 14px 30px;color:var(--muted);font
 <script>
 const INDEX_URL="https://tecolicom.github.io/japan-gomi-data/ics/index.csv";
 const $=id=>document.getElementById(id);
-let records=[],ibarakiMunicipalities=[],importedCollectionEvents=[],active=null,events=[],month=new Date(),picked=new Date();picked.setHours(0,0,0,0);
+let records=[],ibarakiMunicipalities=[],importedCollectionEvents=[],importedCollectionRules=[],active=null,events=[],month=new Date(),picked=new Date();picked.setHours(0,0,0,0);
 let manual=JSON.parse(localStorage.getItem("gomiManualV2")||"[]");
 const jpDays=["日","月","火","水","木","金","土"];
 function csvParse(text){
@@ -99,7 +99,7 @@ async function loadIndex(){
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 async function loadIbarakiMunicipalities(){
  try{const res=await fetch("./data/ibaraki-municipalities.json",{cache:"no-store"});if(!res.ok)throw Error("HTTP "+res.status);const data=await res.json();ibarakiMunicipalities=data.municipalities||[];
-  try{const ir=await fetch("./data/imported-collection-dates.json",{cache:"no-store"});if(ir.ok){const imported=await ir.json();importedCollectionEvents=imported.events||[]}}catch(e){console.warn("抽出済み日程を読み込めません",e)}
+  try{const ir=await fetch("./data/imported-collection-dates.json",{cache:"no-store"});if(ir.ok){const imported=await ir.json();importedCollectionEvents=imported.events||[];importedCollectionRules=imported.rules||[]}}catch(e){console.warn("抽出済み日程を読み込めません",e)}
   const pref=$("pref");if(![...pref.options].some(o=>o.value==="茨城県"))pref.add(new Option("茨城県","茨城県"));renderResults();
  }catch(e){console.warn("茨城県の自治体一覧を読み込めませんでした",e)}
 }
@@ -108,7 +108,7 @@ function renderResults(){
  const filtered=records.filter(r=>(!p||r.pref===p)&&(!q||[r.city,r.course,r.courseName,r.areas,r.pref].join(" ").toLowerCase().includes(q))).slice(0,100);
  const local=ibarakiMunicipalities.filter(x=>(!p||p==="茨城県")&&(!q||("茨城県 "+x.name).toLowerCase().includes(q)));
  const normalHtml=filtered.map(r=>'<button class="result" data-index="'+records.indexOf(r)+'"><b>'+escapeHtml(r.pref+"　"+r.city)+'</b><span>'+escapeHtml(r.courseName||r.course||"収集コース")+'</span><small>'+escapeHtml(r.areas||"対象地区の記載なし")+'</small></button>').join("");
- const localHtml=local.map(x=>{const count=importedCollectionEvents.filter(e=>e.municipality===x.name).length;return '<div class="result"><b>茨城県　'+escapeHtml(x.name)+'</b><small>'+(count?("PDFから抽出した予定 "+count+" 件（要確認）"):escapeHtml(x.calendar_status||"公式カレンダー未確認"))+'</small><button class="tab" data-import="'+escapeHtml(x.name)+'">抽出済み日程を表示</button> <a href="'+escapeHtml(x.calendar_page||x.official_site)+'" target="_blank" rel="noopener">公式資料</a></div>'}).join("");
+ const localHtml=local.map(x=>{const count=importedCollectionEvents.filter(e=>e.municipality===x.name).length;const ruleCount=importedCollectionRules.filter(e=>e.municipality===x.name).length;return '<div class="result"><b>茨城県　'+escapeHtml(x.name)+'</b><small>'+((count||ruleCount)?("日付 "+count+" 件・収集ルール "+ruleCount+" 件（要確認）"):escapeHtml(x.calendar_status||"公式カレンダー未確認"))+'</small><button class="tab" data-import="'+escapeHtml(x.name)+'">抽出済み日程を表示</button> <a href="'+escapeHtml(x.calendar_page||x.official_site)+'" target="_blank" rel="noopener">公式資料</a></div>'}).join("");
  $("results").innerHTML=(normalHtml+localHtml)||'<p class="muted">該当する地域が見つかりません。町名の一部や市区町村名で検索してみてください。</p>';
  $("results").querySelectorAll("[data-index]").forEach(el=>el.onclick=()=>choose(records[Number(el.dataset.index)]));
  $("results").querySelectorAll("[data-import]").forEach(el=>el.onclick=()=>chooseImported(el.dataset.import));
@@ -146,10 +146,12 @@ async function choose(r){
 }
 function chooseImported(municipality){
  const selected=importedCollectionEvents.filter(e=>e.municipality===municipality);
- if(!selected.length){alert("この自治体のPDF抽出済み日程はまだありません。公式資料リンクから確認してください。");return}
- active={pref:"茨城県",city:municipality,courseName:"公式PDF抽出データ"};
- events=selected.map(e=>({date:e.date,summary:e.type,description:(e.district&&e.district!=="不明"?"地区："+e.district+" ／ ":"地区未特定 ／ ")+"AI抽出・要確認",source:e.source_pdf,verification:e.verification}));
- $("selectedArea").textContent="茨城県 / "+municipality+" / 公式PDFから抽出（AI抽出・要確認）";
+ const selectedRules=importedCollectionRules.filter(e=>e.municipality===municipality);
+ if(!selected.length&&!selectedRules.length){alert("この自治体のPDF抽出済み日程・ルールはまだありません。公式資料リンクから確認してください。");return}
+ active={pref:"茨城県",city:municipality,courseName:"公式資料抽出データ"};
+ events=selected.map(e=>({date:e.date,summary:e.type,description:(e.district&&e.district!=="不明"?"地区："+e.district+" ／ ":"地区未特定 ／ ")+(e.note?e.note+" ／ ":"")+"AI抽出・要確認",source:e.source_page,verification:e.verification}));
+ $("selectedArea").textContent="茨城県 / "+municipality+" / 公式資料から抽出（AI抽出・要確認）";
+ $("importedRules").innerHTML=selectedRules.length?selectedRules.map(e=>'<div class="item"><span><b>'+escapeHtml(e.type)+'</b><br>'+escapeHtml(e.rule)+'<small class="muted"><br>'+escapeHtml(e.district||"地区不明")+(e.note?" ／ "+escapeHtml(e.note):"")+'</small><br><a href="'+escapeHtml(e.source_page)+'" target="_blank" rel="noopener">公式出典ページ</a></span><span class="pill">要確認</span></div>').join(""):'<span class="muted">抽出された定期ルールはありません。</span>';
  document.querySelector('[data-tab="calendar"]').click();month=new Date();month.setDate(1);picked=new Date();picked.setHours(0,0,0,0);drawCalendar();
 }
 function dateKey(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
