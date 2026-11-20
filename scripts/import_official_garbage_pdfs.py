@@ -92,6 +92,9 @@ def main():
                 raw=re.sub(r"\s*\x60{3}$","",raw)
                 parsed=json.loads(raw)
                 if not isinstance(parsed,list): raise ValueError("Gemini response must be a JSON array")
+                # 公式PDFが更新された場合は、そのPDF由来の旧データを置き換える
+                existing=[e for e in existing if e.get("source_pdf") != url]
+                keys={(e.get("municipality"),e.get("district"),e.get("date"),e.get("type"),e.get("source_pdf")) for e in existing}
                 added=0
                 for item in parsed:
                     if not isinstance(item,dict): continue
