@@ -8,20 +8,26 @@
     {
       "name": "水戸市",
       "official_site": "https://www.city.mito.lg.jp/",
-      "calendar_status": "未確認",
-      "calendar_source": null
+      "calendar_status": "公式カレンダー掲載確認",
+      "calendar_source": null,
+      "calendar_page": "https://www.city.mito.lg.jp/site/gomi/120306.html",
+      "verified_on": "2026-11-20"
     },
     {
       "name": "日立市",
       "official_site": "https://www.city.hitachi.lg.jp/",
-      "calendar_status": "未確認",
-      "calendar_source": null
+      "calendar_status": "公式カレンダー掲載確認",
+      "calendar_source": null,
+      "calendar_page": "https://www.city.hitachi.lg.jp/kurashi_tetsuzuki/gomi_recycle/1002242/1009431.html",
+      "verified_on": "2026-11-20"
     },
     {
       "name": "土浦市",
       "official_site": "https://www.city.tsuchiura.lg.jp/",
-      "calendar_status": "未確認",
-      "calendar_source": null
+      "calendar_status": "公式カレンダー掲載確認",
+      "calendar_source": null,
+      "calendar_page": "https://www.city.tsuchiura.lg.jp/kurashi-tetsuzuki/gomi-recycle/wakekata-dashikata/shushubi/page005681.html",
+      "verified_on": "2026-11-20"
     },
     {
       "name": "古河市",
@@ -44,8 +50,10 @@
     {
       "name": "龍ケ崎市",
       "official_site": "https://www.city.ryugasaki.ibaraki.jp/",
-      "calendar_status": "未確認",
-      "calendar_source": null
+      "calendar_status": "公式カレンダー掲載確認",
+      "calendar_source": null,
+      "calendar_page": "https://www.city.ryugasaki.ibaraki.jp/kurashi/kankyo/gomi/oshirase/gomisyuusyuukarennda.html",
+      "verified_on": "2026-11-20"
     },
     {
       "name": "下妻市",
@@ -86,20 +94,26 @@
     {
       "name": "取手市",
       "official_site": "https://www.city.toride.ibaraki.jp/",
-      "calendar_status": "未確認",
-      "calendar_source": null
+      "calendar_status": "公式カレンダー掲載確認",
+      "calendar_source": null,
+      "calendar_page": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/g-calendar.html",
+      "verified_on": "2026-11-20"
     },
     {
       "name": "牛久市",
       "official_site": "https://www.city.ushiku.lg.jp/",
-      "calendar_status": "未確認",
-      "calendar_source": null
+      "calendar_status": "公式カレンダー掲載確認",
+      "calendar_source": null,
+      "calendar_page": "https://www.city.ushiku.lg.jp/garbage.php?mode=area",
+      "verified_on": "2026-11-20"
     },
     {
       "name": "つくば市",
       "official_site": "https://www.city.tsukuba.lg.jp/",
-      "calendar_status": "未確認",
-      "calendar_source": null
+      "calendar_status": "公式カレンダー掲載確認",
+      "calendar_source": null,
+      "calendar_page": "https://www.city.tsukuba.lg.jp/kurashi/recycle/1000820.html",
+      "verified_on": "2026-11-20"
     },
     {
       "name": "ひたちなか市",
@@ -110,8 +124,10 @@
     {
       "name": "鹿嶋市",
       "official_site": "https://www.city.kashima.ibaraki.jp/",
-      "calendar_status": "未確認",
-      "calendar_source": null
+      "calendar_status": "公式カレンダー掲載確認",
+      "calendar_source": null,
+      "calendar_page": "https://www.city.kashima.ibaraki.jp/site/shinsei/83368.html",
+      "verified_on": "2026-11-20"
     },
     {
       "name": "潮来市",
@@ -122,8 +138,10 @@
     {
       "name": "守谷市",
       "official_site": "https://www.city.moriya.ibaraki.jp/",
-      "calendar_status": "未確認",
-      "calendar_source": null
+      "calendar_status": "公式カレンダー掲載確認",
+      "calendar_source": null,
+      "calendar_page": "https://www.city.moriya.ibaraki.jp/kurashi_tetsuzuki/kankyo_gomi/1002052/1002060.html",
+      "verified_on": "2026-11-20"
     },
     {
       "name": "常陸大宮市",
@@ -200,8 +218,10 @@
     {
       "name": "茨城町",
       "official_site": "https://www.town.ibaraki.lg.jp/",
-      "calendar_status": "未確認",
-      "calendar_source": null
+      "calendar_status": "公式カレンダー掲載確認",
+      "calendar_source": null,
+      "calendar_page": "https://www.town.ibaraki.lg.jp/gyousei/kurashitetuduki/gomirisaikle/gomi/003836.html",
+      "verified_on": "2026-11-20"
     },
     {
       "name": "大洗町",
