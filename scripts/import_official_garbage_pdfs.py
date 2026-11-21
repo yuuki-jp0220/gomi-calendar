@@ -325,15 +325,21 @@ def extract_toride_grid_calendar(asset, municipality, page_url, ocr):
                 # 月見出しの「数字 + 月」を同じ行から検出する。
                 month_heads = []
                 for w in words:
-                    token = clean(w.get("text", ""))
+                    token = clean(w.get("text", "")).translate(str.maketrans("０１２３４５６７８９", "0123456789"))
+                    # OCRが「4月」「２０２６年４月」を一つの文字枠として返す場合にも対応。
+                    inline_month = re.search(r"(?:20\d{2}年)?(1[0-2]|[1-9])月", token)
+                    if inline_month:
+                        month = int(inline_month.group(1))
+                        month_heads.append((month, (float(w["x0"]) + float(w["x1"])) / 2, float(w["bottom"])))
+                        continue
                     if not re.fullmatch(r"(?:[1-9]|1[0-2])", token):
                         continue
                     month = int(token)
                     near_month = [
                         z for z in words
-                        if clean(z.get("text", "")) == "月"
-                        and abs(float(z["top"]) - float(w["top"])) < 4
-                        and 0 <= float(z["x0"]) - float(w["x1"]) < 14
+                        if clean(z.get("text", "")).translate(str.maketrans("０１２３４５６７８９", "0123456789")) == "月"
+                        and abs(float(z["top"]) - float(w["top"])) < 6
+                        and 0 <= float(z["x0"]) - float(w["x1"]) < 18
                     ]
                     if near_month:
                         month_heads.append((month, (float(w["x0"]) + float(near_month[0]["x1"])) / 2, float(w["bottom"])))
@@ -385,14 +391,14 @@ def extract_toride_grid_calendar(asset, municipality, page_url, ocr):
                             day_words = []
                             for w in cell_words:
                                 t = clean(w.get("text", ""))
-                                if re.fullmatch(r"(?:[1-9]|[12]\d|3[01])", t):
+                                if re.fullmatch(r"0?(?:[1-9]|[12]\d|3[01])日?", t.translate(str.maketrans("０１２３４５６７８９", "0123456789"))):
                                     cy = (float(w["top"]) + float(w["bottom"])) / 2
                                     if cy <= y_top + (y_bottom - y_top) * 0.58:
                                         day_words.append(w)
                             if not day_words:
                                 continue
                             day_word = min(day_words, key=lambda w: (float(w["top"]), float(w["x0"])))
-                            day = int(clean(day_word["text"]))
+                            day = int(re.sub(r"日$", "", clean(day_word["text"]).translate(str.maketrans("０１２３４５６７８９", "0123456789"))))
                             try:
                                 date_obj = datetime(year, month, day)
                             except ValueError:
