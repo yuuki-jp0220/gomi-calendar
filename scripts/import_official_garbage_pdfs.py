@@ -313,14 +313,15 @@ def extract_toride_grid_calendar(asset, municipality, page_url, ocr):
                     # 隣接ピクセルに重複した罫線候補をまとめる。
                     def merge_near_lines(lines, axis_index, span_indices, tolerance=2.0):
                         merged = []
-                        for line in sorted(lines, key=lambda z: z[axis_index]):
-                            if merged and abs(line[axis_index] - merged[-1][axis_index]) <= tolerance:
+                        for line in sorted(lines, key=lambda z: (z[axis_index], z[span_indices[0]])):
+                            same_axis = bool(merged) and abs(line[axis_index] - merged[-1][axis_index]) <= tolerance
+                            touches_span = bool(merged) and line[span_indices[0]] <= merged[-1][span_indices[1]] + 3 and line[span_indices[1]] >= merged[-1][span_indices[0]] - 3
+                            if same_axis and touches_span:
                                 prev = merged[-1]
-                                merged[-1] = (
-                                    (prev[0] + line[0]) / 2 if axis_index == 0 else prev[0],
-                                    min(prev[1], line[1]) if axis_index == 0 else (prev[1] + line[1]) / 2,
-                                    max(prev[2], line[2]) if axis_index == 0 else max(prev[2], line[2])
-                                )
+                                if axis_index == 0:
+                                    merged[-1] = ((prev[0] + line[0]) / 2, min(prev[1], line[1]), max(prev[2], line[2]))
+                                else:
+                                    merged[-1] = ((prev[0] + line[0]) / 2, min(prev[1], line[1]), max(prev[2], line[2]))
                             else:
                                 merged.append(line)
                         return merged
