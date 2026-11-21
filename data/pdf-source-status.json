@@ -1,115 +1,75 @@
 {
-  "checked_at": "2026-11-21T02:54:31.197022+00:00",
+  "checked_at": "2026-11-21T10:28:10.034220+00:00",
   "pdfs": [
     {
       "municipality": "水戸市",
       "page_url": "https://www.city.mito.lg.jp/site/gomi/120306.html",
       "sha256": "0514bc8c89bd744982184a4022303085bf2bebdd2e43ea48bcfdd161aa848f90",
       "asset_count": 8,
-      "status": "processed",
-      "date_events": 0,
-      "rule_events": 0,
-      "review_items": 1,
-      "processed_at": "2026-11-21T02:50:36.814266+00:00"
+      "status": "processed_unchanged"
     },
     {
       "municipality": "日立市",
       "page_url": "https://www.city.hitachi.lg.jp/kurashi_tetsuzuki/gomi_recycle/1002242/1009431.html",
       "sha256": "fd45d440eb49518e97c6e70fa658594f7d28f2a37c92f0013ddeeb02156ea4dc",
       "asset_count": 8,
-      "status": "processed",
-      "date_events": 0,
-      "rule_events": 0,
-      "review_items": 8,
-      "processed_at": "2026-11-21T02:51:19.015255+00:00"
+      "status": "processed_unchanged"
     },
     {
       "municipality": "土浦市",
       "page_url": "https://www.city.tsuchiura.lg.jp/kurashi-tetsuzuki/gomi-recycle/wakekata-dashikata/shushubi/page005681.html",
       "sha256": "7120ac23396d400d8355fa3b1925cfd061b05701f420c10fd8e01cf4c18f85bb",
       "asset_count": 1,
-      "status": "processed",
-      "date_events": 0,
-      "rule_events": 0,
-      "review_items": 0,
-      "processed_at": "2026-11-21T02:51:22.968984+00:00"
+      "status": "processed_unchanged"
     },
     {
       "municipality": "取手市",
       "page_url": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/g-calendar.html",
       "sha256": "e512326b4800036b5c228be9402890db1e24de835f5fdd829f18314286b5554d",
       "asset_count": 7,
-      "status": "processed",
-      "date_events": 0,
-      "rule_events": 0,
-      "review_items": 2,
-      "processed_at": "2026-11-21T02:53:17.837361+00:00"
+      "status": "processed_unchanged"
     },
     {
       "municipality": "龍ケ崎市",
       "page_url": "https://www.city.ryugasaki.ibaraki.jp/kurashi/kankyo/gomi/oshirase/gomisyuusyuukarennda.html",
       "sha256": "018bb9e781aad322004eb280c1ae95dd7586105444620f2355e10681dc7a7a1d",
       "asset_count": 8,
-      "status": "processed",
-      "date_events": 0,
-      "rule_events": 0,
-      "review_items": 0,
-      "processed_at": "2026-11-21T02:53:27.533725+00:00"
+      "status": "processed_unchanged"
     },
     {
       "municipality": "牛久市",
       "page_url": "https://www.city.ushiku.lg.jp/garbage.php?mode=area",
       "sha256": "58541e6aa3109c6a3f8c126fbed6586aeedb50722f237b0b09a4a3328e4d741a",
       "asset_count": 0,
-      "status": "processed",
-      "date_events": 0,
-      "rule_events": 0,
-      "review_items": 0,
-      "processed_at": "2026-11-21T02:53:29.827811+00:00"
+      "status": "processed_unchanged"
     },
     {
       "municipality": "つくば市",
       "page_url": "https://www.city.tsukuba.lg.jp/kurashi/recycle/1000820.html",
       "sha256": "ddf674d61e6536251d610a8b1dd8deb2d5030c40ab784d7d8d2d950ea0cc4f8c",
       "asset_count": 8,
-      "status": "processed",
-      "date_events": 0,
-      "rule_events": 0,
-      "review_items": 0,
-      "processed_at": "2026-11-21T02:53:59.122838+00:00"
+      "status": "processed_unchanged"
     },
     {
       "municipality": "鹿嶋市",
       "page_url": "https://www.city.kashima.ibaraki.jp/site/shinsei/83368.html",
       "sha256": "c7f361c5c3a1512545a477ba1351964c72f66985ea10ed6c0a44ced7c214935d",
       "asset_count": 8,
-      "status": "processed",
-      "date_events": 0,
-      "rule_events": 0,
-      "review_items": 0,
-      "processed_at": "2026-11-21T02:54:14.729669+00:00"
+      "status": "processed_unchanged"
     },
     {
       "municipality": "守谷市",
       "page_url": "https://www.city.moriya.ibaraki.jp/kurashi_tetsuzuki/kankyo_gomi/1002052/1002060/1008307/index.html",
       "sha256": "b58e7fd467630a096590c3692b08b481ecb14eda67bf706a61ec50ff34d1c662",
       "asset_count": 1,
-      "status": "processed",
-      "date_events": 0,
-      "rule_events": 0,
-      "review_items": 0,
-      "processed_at": "2026-11-21T02:54:23.116724+00:00"
+      "status": "processed_unchanged"
     },
     {
       "municipality": "茨城町",
       "page_url": "https://www.town.ibaraki.lg.jp/gyousei/kurashitetuduki/gomirisaikle/gomi/003836.html",
       "sha256": "244fbb8b3d8b264680948d7ce726b60d42471682383479fa3290a94b7ab9565e",
       "asset_count": 8,
-      "status": "processed",
-      "date_events": 0,
-      "rule_events": 0,
-      "review_items": 0,
-      "processed_at": "2026-11-21T02:54:31.196581+00:00"
+      "status": "processed_unchanged"
     }
   ]
 }
