@@ -280,9 +280,28 @@ def parse_text(municipality, page_url, page_text, asset_texts, ai):
             rule_match = WEEKDAY_RULE.search(line)
             if not dates and not rule_match:
                 continue
-            # 「無し」は収集品目ではなく、収集がない日の表記。
-            # 同じ行に実際の品目があれば、その品目の抽出は続ける。
-            if not terms and re.search(r"(?:無し|なし)", line):
+            # 「無し」はごみの品目ではなく「収集なし」として日程に記録する。
+            # 同じ行に実際の品目があれば、その品目を優先して通常どおり抽出する。
+            no_collection = re.search(r"(?:収集なし|無し|なし)", line)
+            if not terms and no_collection:
+                if len(dates) == 1:
+                    key = (dates[0], "収集なし", source_name, page_no, line)
+                    if key not in seen:
+                        events.append({
+                            "municipality": municipality,
+                            "district": "地区不明",
+                            "type": "収集なし",
+                            "raw_type": no_collection.group(0),
+                            "date": dates[0],
+                            "note": line[:300],
+                            "source_page": page_url,
+                            "source_asset": source_name if source_name != "ページ本文" else "",
+                            "source_page_number": page_no or None,
+                            "verification": "要確認",
+                            "engine": "BuiltIn-Lightweight-AI (v1.0)",
+                            "confidence": 1.0,
+                        })
+                        seen.add(key)
                 continue
             if len(terms) > 1 and len(dates) == 1:
                 for raw_type in terms:
