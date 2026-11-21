@@ -68,6 +68,7 @@ const INDEX_URL="https://tecolicom.github.io/japan-gomi-data/ics/index.csv";
 const $=id=>document.getElementById(id);
 let records=[],indexLoaded=false,indexPromise=null,ibarakiMunicipalities=[],importedCollectionEvents=[],importedCollectionRules=[],active=null,events=[],month=new Date(),picked=new Date();picked.setHours(0,0,0,0);
 let manual=JSON.parse(localStorage.getItem("gomiManualV2")||"[]");
+let resultRows=[],resultOffset=0;
 const jpDays=["日","月","火","水","木","金","土"];
 const PREFECTURES='北海道 青森県 岩手県 宮城県 秋田県 山形県 福島県 茨城県 栃木県 群馬県 埼玉県 千葉県 東京都 神奈川県 新潟県 富山県 石川県 福井県 山梨県 長野県 岐阜県 静岡県 愛知県 三重県 滋賀県 京都府 大阪府 兵庫県 奈良県 和歌山県 鳥取県 島根県 岡山県 広島県 山口県 徳島県 香川県 愛媛県 高知県 福岡県 佐賀県 長崎県 熊本県 大分県 宮崎県 鹿児島県 沖縄県'.split(' ');
 function csvParse(text){
@@ -104,16 +105,27 @@ async function loadIbarakiMunicipalities(){
   const pref=$("pref");if(![...pref.options].some(o=>o.value==="茨城県"))pref.add(new Option("茨城県","茨城県"));renderResults();
  }catch(e){console.warn("茨城県の自治体一覧を読み込めませんでした",e)}
 }
-function renderResults(){
+function renderResults(reset=true){
  const q=$("query").value.trim().toLowerCase(),p=$("pref").value;
- if(!p&&!q){$("results").innerHTML="<p class=\\"muted\\">都道府県を選択するか、市区町村名を入力してください。</p>";return}
- const filtered=records.filter(r=>(!p||r.pref===p)&&(!q||[r.city,r.course,r.courseName,r.areas,r.pref].join(" ").toLowerCase().includes(q))).slice(0,100);
+ if(!p&&!q){$("results").innerHTML="<p class=\"muted\">都道府県を選択するか、市区町村名を入力してください。</p>";return}
+ if(reset){resultRows=records.filter(r=>(!p||r.pref===p)&&(!q||[r.city,r.course,r.courseName,r.areas,r.pref].join(" ").toLowerCase().includes(q)));resultOffset=0;$("results").innerHTML="";}
  const local=ibarakiMunicipalities.filter(x=>(p==="茨城県")&&(!q||("茨城県 "+x.name).toLowerCase().includes(q)));
- const normalHtml=filtered.map(r=>'<button class="result" data-index="'+records.indexOf(r)+'"><b>'+escapeHtml(r.pref+"　"+r.city)+'</b><span>'+escapeHtml(r.courseName||r.course||"収集コース")+'</span><small>'+escapeHtml(r.areas||"対象地区の記載なし")+'</small></button>').join("");
- const localHtml=local.map(x=>{const count=importedCollectionEvents.filter(e=>e.municipality===x.name).length;const ruleCount=importedCollectionRules.filter(e=>e.municipality===x.name).length;return '<div class="result"><b>茨城県　'+escapeHtml(x.name)+'</b><small>'+((count||ruleCount)?("日付 "+count+" 件・収集ルール "+ruleCount+" 件（要確認）"):escapeHtml(x.calendar_status||"公式カレンダー未確認"))+'</small>'+(count||ruleCount?'<button class="tab" data-import="'+escapeHtml(x.name)+'">抽出済み日程を表示</button> ':'')+'<a href="'+escapeHtml(x.calendar_page||x.official_site)+'" target="_blank" rel="noopener">公式資料</a></div>'}).join("");
- $("results").innerHTML=(normalHtml+localHtml)||'<p class="muted">該当する地域が見つかりません。町名の一部や市区町村名で検索してみてください。</p>';
- $("results").querySelectorAll("[data-index]").forEach(el=>el.onclick=()=>choose(records[Number(el.dataset.index)]));
- $("results").querySelectorAll("[data-import]").forEach(el=>el.onclick=()=>chooseImported(el.dataset.import));
+ if(reset&&p==="茨城県"){
+  const localHtml=local.map(x=>{const count=importedCollectionEvents.filter(e=>e.municipality===x.name).length;const ruleCount=importedCollectionRules.filter(e=>e.municipality===x.name).length;return '<div class="result"><b>茨城県　'+escapeHtml(x.name)+'</b><small>'+((count||ruleCount)?("日付 "+count+" 件・収集ルール "+ruleCount+" 件（要確認）"):escapeHtml(x.calendar_status||"公式カレンダー未確認"))+'</small>'+(count||ruleCount?'<button class="tab" data-import="'+escapeHtml(x.name)+'">抽出済み日程を表示</button> ':'')+'<a href="'+escapeHtml(x.calendar_page||x.official_site)+'" target="_blank" rel="noopener">公式資料</a></div>'}).join("");
+  $("results").insertAdjacentHTML("beforeend",localHtml);
+  $("results").querySelectorAll("[data-import]").forEach(el=>el.onclick=()=>chooseImported(el.dataset.import));
+ }
+ appendNextResults();
+}
+function appendNextResults(){
+ const batch=resultRows.slice(resultOffset,resultOffset+3);
+ if(!batch.length&&resultOffset===0&&!$("results").children.length){$("results").innerHTML='<p class="muted">該当する地域が見つかりません。町名の一部や市区町村名で検索してみてください。</p>';return}
+ const html=batch.map(r=>'<button class="result" data-index="'+records.indexOf(r)+'"><b>'+escapeHtml(r.pref+"　"+r.city)+'</b><span>'+escapeHtml(r.courseName||r.course||"収集コース")+'</span><small>'+escapeHtml(r.areas||"対象地区の記載なし")+'</small></button>').join("");
+ $("results").insertAdjacentHTML("beforeend",html);
+ resultOffset+=batch.length;
+ $("results").querySelectorAll("[data-index]").forEach(el=>{if(!el.dataset.bound){el.dataset.bound="1";el.onclick=()=>choose(records[Number(el.dataset.index)])}});
+ const old=$("loadMoreResults");if(old)old.remove();
+ if(resultOffset<resultRows.length){const btn=document.createElement("button");btn.id="loadMoreResults";btn.className="tab";btn.textContent="さらに3件読み込む（"+resultOffset+"/"+resultRows.length+"件）";btn.onclick=appendNextResults;$("results").appendChild(btn)}
 }
 $("query").addEventListener("input",async()=>{const q=$("query").value.trim();if(q&&!indexLoaded){try{await loadIndex()}catch(e){return}}renderResults()});$("pref").addEventListener("change",async()=>{const p=$("pref").value;if(p==="茨城県"){await loadIbarakiMunicipalities();renderResults();return}if(p&&!indexLoaded){try{await loadIndex()}catch(e){return}}renderResults()});
 function decodeIcs(s){return (s||"").replace(/\\n/gi," ").replace(/\\,/g,",").replace(/\\;/g,";").replace(/\\\\/g,"\\")}
