@@ -662,7 +662,8 @@ def main():
                 asset_texts.append({"url": asset["url"], "pages": pages})
             if not page_text.strip() and not assets:
                 raise RuntimeError("公式ページから本文・添付資料を取得できませんでした")
-            digest = hashlib.sha256((page_text + "".join(a["sha256"] for a in assets)).encode("utf-8")).hexdigest()
+            PARSER_VERSION = "2026-11-21-toride-ocr-grid-v3"
+            digest = hashlib.sha256((PARSER_VERSION + page_text + "".join(a["sha256"] for a in assets)).encode("utf-8")).hexdigest()
             row.update({"sha256": digest, "asset_count": len(assets)})
             old = old_by_url.get(page_url, {})
             if old.get("sha256") == digest and old.get("status") in ("processed", "processed_unchanged"):
