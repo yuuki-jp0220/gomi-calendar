@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-21T02:11:40.555089+00:00",
+  "checked_at": "2026-11-21T02:18:33.080899+00:00",
   "pdfs": [
     {
       "municipality": "水戸市",
@@ -27,11 +27,7 @@
       "page_url": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/g-calendar.html",
       "sha256": "9a432b67590b32cfa453c5a8c35e7f9e8f1ebf32d7ee176b0b4aca1f9e6f060e",
       "asset_count": 7,
-      "status": "processed",
-      "date_events": 0,
-      "rule_events": 0,
-      "review_items": 2,
-      "processed_at": "2026-11-21T02:10:35.770946+00:00"
+      "status": "processed_unchanged"
     },
     {
       "municipality": "龍ケ崎市",
