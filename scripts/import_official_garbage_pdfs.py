@@ -68,7 +68,7 @@ def read_json(path, default):
 def clean(value):
     return re.sub(r"\s+", " ", str(value or "")).strip()
 
-def fetch_page_assets(url):
+def fetch_page_assets(url, extra_asset_urls=None):
     ASSET_DIR.mkdir(parents=True, exist_ok=True)
     session = requests.Session()
     session.headers.update(HEADERS)
@@ -90,8 +90,17 @@ def fetch_page_assets(url):
         if path.endswith(EXTENSIONS):
             links[full] = label or Path(path).name
 
+    for extra_url in (extra_asset_urls or []):
+        full = urljoin(url, extra_url)
+        if urlparse(full).path.lower().endswith(EXTENSIONS):
+            links[full] = Path(urlparse(full).path).name
+
     downloaded = []
-    for asset_url, label in list(links.items())[:MAX_ASSETS_PER_PAGE]:
+    # 明示された自治体公式PDFを優先し、HTML内の添付資料も従来どおり取得する。
+    ordered_links = list(links.items())
+    explicit = [(u, label) for u, label in ordered_links if u in {urljoin(url, x) for x in (extra_asset_urls or [])}]
+    remaining = [(u, label) for u, label in ordered_links if u not in {x[0] for x in explicit}]
+    for asset_url, label in (explicit + remaining)[:MAX_ASSETS_PER_PAGE]:
         try:
             r = session.get(asset_url, timeout=40)
             r.raise_for_status()
@@ -381,7 +390,7 @@ def main():
         row = {"municipality": municipality, "page_url": page_url}
         assets = []
         try:
-            page_text, assets = fetch_page_assets(page_url)
+            page_text, assets = fetch_page_assets(page_url, source.get("assets", []))
             linked_calendar_text = fetch_linked_calendar_text(page_url)
             if linked_calendar_text:
                 page_text = page_text + "\n" + linked_calendar_text
