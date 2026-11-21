@@ -8,6 +8,8 @@ from urllib.parse import urljoin, urlparse, unquote
 
 import fitz
 import pdfplumber
+import numpy as np
+from PIL import Image
 import requests
 from bs4 import BeautifulSoup
 from PIL import Image
@@ -230,7 +232,7 @@ def extract_asset_text(asset, ocr):
             print("Image OCR warning:", str(exc)[:120])
     return chunks
 
-def extract_toride_grid_calendar(asset, municipality, page_url):
+def extract_toride_grid_calendar(asset, municipality, page_url, ocr):
     """取手市公式PDFの月間カレンダーを、PDF内の文字座標と罫線から保守的に解析する。"""
     events = []
     review = []
@@ -238,17 +240,33 @@ def extract_toride_grid_calendar(asset, municipality, page_url):
         with pdfplumber.open(str(asset["path"])) as pdf:
             for page_index, page in enumerate(pdf.pages):
                 words = page.extract_words(x_tolerance=1, y_tolerance=2, keep_blank_chars=False)
+                # 画像PDFの場合はRapidOCRの文字枠をPDF座標へ換算して使う。
+                pix = None
+                scale = 2.2
                 if not words:
-                    review.append({
-                        "municipality": municipality, "district": "A面/B面の判別済み・日付未判定",
-                        "type": "カレンダー解析未完了", "source_page": page_url,
-                        "source_asset": asset["url"], "source_page_number": page_index + 1,
-                        "verification": "要確認", "engine": "PDF-grid-parser-v1",
-                        "raw_text": "PDFから座標付き文字を取得できませんでした。",
-                        "candidate_dates": [], "candidate_types": [],
-                        "reason": "画像PDFのため座標付きテキストが取得できない"
-                    })
-                    continue
+                    fitz_doc = fitz.open(str(asset["path"]))
+                    fitz_page = fitz_doc[page_index]
+                    pix = fitz_page.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
+                    image_path = ASSET_DIR / ("toride_grid_" + str(page_index) + ".png")
+                    pix.save(str(image_path))
+                    ocr_result, _ = ocr(str(image_path))
+                    image_path.unlink(missing_ok=True)
+                    if ocr_result:
+                        for item in ocr_result:
+                            try:
+                                box, text_value, score = item[0], clean(item[1]), float(item[2])
+                                if not text_value or score < 0.25:
+                                    continue
+                                xs = [float(p[0]) for p in box]
+                                ys = [float(p[1]) for p in box]
+                                words.append({
+                                    "text": text_value, "x0": min(xs) / scale,
+                                    "x1": max(xs) / scale, "top": min(ys) / scale,
+                                    "bottom": max(ys) / scale, "ocr_score": score
+                                })
+                            except Exception:
+                                continue
+                    fitz_doc.close()
 
                 horizontal = []
                 vertical = []
@@ -259,6 +277,50 @@ def extract_toride_grid_calendar(asset, municipality, page_url):
                         horizontal.append((round((y0 + y1) / 2, 1), min(x0, x1), max(x0, x1)))
                     elif abs(x1 - x0) <= 1.2 and abs(y1 - y0) >= 25:
                         vertical.append((round((x0 + x1) / 2, 1), min(y0, y1), max(y0, y1)))
+
+                # スキャン画像ではPDFの罫線オブジェクトがないため、画像上の直線を検出する。
+                if (not horizontal or not vertical) and pix is not None:
+                    gray = np.asarray(Image.frombytes("RGB", [pix.width, pix.height], pix.samples).convert("L"))
+                    dark = gray < 175
+                    row_hits = np.where(dark.sum(axis=1) >= max(100, int(pix.width * 0.42)))[0]
+                    col_hits = np.where(dark.sum(axis=0) >= max(100, int(pix.height * 0.30)))[0]
+
+                    def grouped_centers(values, max_gap=3):
+                        if len(values) == 0:
+                            return []
+                        groups, current = [], [int(values[0])]
+                        for value in values[1:]:
+                            value = int(value)
+                            if value - current[-1] <= max_gap:
+                                current.append(value)
+                            else:
+                                groups.append(current)
+                                current = [value]
+                        groups.append(current)
+                        return [sum(g) / len(g) for g in groups if len(g) >= 1]
+
+                    if not horizontal:
+                        for y in grouped_centers(row_hits):
+                            xs = np.where(dark[int(y), :])[0]
+                            if len(xs):
+                                horizontal.append((y / scale, float(xs.min()) / scale, float(xs.max()) / scale))
+                    if not vertical:
+                        for x in grouped_centers(col_hits):
+                            ys = np.where(dark[:, int(x)])[0]
+                            if len(ys):
+                                vertical.append((x / scale, float(ys.min()) / scale, float(ys.max()) / scale))
+
+                if not words:
+                    review.append({
+                        "municipality": municipality, "district": "A面/B面の判別済み・日付未判定",
+                        "type": "カレンダー解析未完了", "source_page": page_url,
+                        "source_asset": asset["url"], "source_page_number": page_index + 1,
+                        "verification": "要確認", "engine": "PDF-grid-parser-v2",
+                        "raw_text": "PDFからOCR文字枠を取得できませんでした。",
+                        "candidate_dates": [], "candidate_types": [],
+                        "reason": "OCRで日付・品目の位置情報を取得できない"
+                    })
+                    continue
 
                 # 月見出しの「数字 + 月」を同じ行から検出する。
                 month_heads = []
@@ -591,7 +653,7 @@ def main():
                 new_events, new_rules, new_review = parse_text(municipality, page_url, page_text, [], ai)
                 for asset in assets:
                     if asset["url"].endswith("/r8ab.pdf"):
-                        grid_events, grid_review = extract_toride_grid_calendar(asset, municipality, page_url)
+                        grid_events, grid_review = extract_toride_grid_calendar(asset, municipality, page_url, ocr)
                         new_events.extend(grid_events)
                         new_review.extend(grid_review)
             else:
