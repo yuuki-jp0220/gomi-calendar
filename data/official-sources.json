@@ -21,7 +21,10 @@
     "municipality": "取手市",
     "type": "official_calendar_index",
     "url": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/g-calendar.html",
-    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。"
+    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。",
+    "assets": [
+      "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/documents/r8ab.pdf"
+    ]
   },
   {
     "municipality": "龍ケ崎市",
