@@ -92,7 +92,7 @@ async function loadIndex(){
   const idx={};rows[0].forEach((h,i)=>idx[h.trim()]=i);
   records=rows.slice(1).map(r=>normalizeRecord(r,idx)).filter(r=>r.city&&r.pref&&r.ics);
   const prefs=[...new Set([...PREFECTURES,...records.map(r=>r.pref)])].sort((a,b)=>a.localeCompare(b,"ja"));
-  $("pref").innerHTML='<option value="">すべての都道府県</option>'+prefs.map(p=>'<option>'+escapeHtml(p)+'</option>').join("");
+  
   $("loadState").textContent=records.length.toLocaleString()+" 件の収集コースを読み込みました。都道府県・市区町村・町名で検索できます。";
   indexLoaded=true;renderResults();
  }catch(e){$("loadState").textContent="全国データを読み込めませんでした："+e.message+"。通信環境を確認してください。";$("results").innerHTML='<a href="https://tecolicom.github.io/japan-gomi-data/" target="_blank" rel="noopener">オープンデータ提供元を開く</a>';throw e}finally{indexPromise=null}})();return indexPromise;
