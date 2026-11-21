@@ -1,10 +1,10 @@
 {
-  "updated_at": "2026-11-21T02:00:02.781791+00:00",
+  "updated_at": "2026-11-21T02:11:40.555089+00:00",
   "count": 0,
   "events": [],
   "rules_count": 0,
   "rules": [],
-  "review_count": 9,
+  "review_count": 11,
   "review_items": [
     {
       "municipality": "水戸市",
@@ -142,6 +142,34 @@
       "candidate_dates": [],
       "candidate_types": [],
       "reason": "日付・品目・地区の対応を一意に確定できないため"
+    },
+    {
+      "municipality": "取手市",
+      "district": "A面/B面の判別済み・日付未判定",
+      "type": "カレンダー解析未完了",
+      "source_page": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/g-calendar.html",
+      "source_asset": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/documents/r8ab.pdf",
+      "source_page_number": 1,
+      "verification": "要確認",
+      "engine": "PDF-grid-parser-v1",
+      "raw_text": "PDFから座標付き文字を取得できませんでした。",
+      "candidate_dates": [],
+      "candidate_types": [],
+      "reason": "画像PDFのため座標付きテキストが取得できない"
+    },
+    {
+      "municipality": "取手市",
+      "district": "A面/B面の判別済み・日付未判定",
+      "type": "カレンダー解析未完了",
+      "source_page": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/g-calendar.html",
+      "source_asset": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/documents/r8ab.pdf",
+      "source_page_number": 2,
+      "verification": "要確認",
+      "engine": "PDF-grid-parser-v1",
+      "raw_text": "PDFから座標付き文字を取得できませんでした。",
+      "candidate_dates": [],
+      "candidate_types": [],
+      "reason": "画像PDFのため座標付きテキストが取得できない"
     }
   ]
 }
