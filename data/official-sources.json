@@ -50,8 +50,8 @@
   {
     "municipality": "守谷市",
     "type": "official_calendar_index",
-    "url": "https://www.city.moriya.ibaraki.jp/kurashi_tetsuzuki/kankyo_gomi/1002052/1002060.html",
-    "note": "自治体公式サイトのごみ収集カレンダー案内。15分ごとの更新検知対象。収集日データの自動取込は別途実装が必要。"
+    "url": "https://www.city.moriya.ibaraki.jp/kurashi_tetsuzuki/kankyo_gomi/1002052/1002060/1008307/index.html",
+    "note": "守谷市公式の2026年度もりやクリーンカレンダー。PDFと月別テキスト版へのリンクを含む。"
   },
   {
     "municipality": "茨城町",
