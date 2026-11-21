@@ -66,7 +66,7 @@ footer{max-width:980px;margin:0 auto;padding:0 14px 30px;color:var(--muted);font
 <script>
 const INDEX_URL="https://tecolicom.github.io/japan-gomi-data/ics/index.csv";
 const $=id=>document.getElementById(id);
-let records=[],ibarakiMunicipalities=[],importedCollectionEvents=[],importedCollectionRules=[],active=null,events=[],month=new Date(),picked=new Date();picked.setHours(0,0,0,0);
+let records=[],indexLoaded=false,indexPromise=null,ibarakiMunicipalities=[],importedCollectionEvents=[],importedCollectionRules=[],active=null,events=[],month=new Date(),picked=new Date();picked.setHours(0,0,0,0);
 let manual=JSON.parse(localStorage.getItem("gomiManualV2")||"[]");
 const jpDays=["日","月","火","水","木","金","土"];
 function csvParse(text){
@@ -83,23 +83,23 @@ function normalizeRecord(row,idx){
  return {code:get("団体コード","自治体コード"),pref:get("都道府県"),handle:get("handle"),city:get("自治体名"),course:get("コース"),courseName:get("コース名"),areas:get("対象地区"),ics:get("ICS URL","ICS URL ")}; 
 }
 async function loadIndex(){
- try{
-  const res=await fetch(INDEX_URL,{cache:"no-store"});if(!res.ok)throw Error("HTTP "+res.status);
+ if(indexLoaded)return;
+ if(indexPromise)return indexPromise;
+ indexPromise=(async()=>{try{
+  const res=await fetch(INDEX_URL,{cache:"force-cache"});if(!res.ok)throw Error("HTTP "+res.status);
   const text=await res.text(),rows=csvParse(text.replace(/^\uFEFF/,""));if(rows.length<2)throw Error("CSVにデータがありません");
   const idx={};rows[0].forEach((h,i)=>idx[h.trim()]=i);
   records=rows.slice(1).map(r=>normalizeRecord(r,idx)).filter(r=>r.city&&r.pref&&r.ics);
   const prefs=[...new Set(records.map(r=>r.pref))].sort((a,b)=>a.localeCompare(b,"ja"));
   $("pref").innerHTML='<option value="">すべての都道府県</option>'+prefs.map(p=>'<option>'+escapeHtml(p)+'</option>').join("");
   $("loadState").textContent=records.length.toLocaleString()+" 件の収集コースを読み込みました。都道府県・市区町村・町名で検索できます。";
-  renderResults();
-  loadIbarakiMunicipalities();
- }catch(e){$("loadState").textContent="全国データを読み込めませんでした："+e.message+"。通信環境を確認するか、提供元のページを開いてください。";$("results").innerHTML='<a href="https://tecolicom.github.io/japan-gomi-data/" target="_blank" rel="noopener">オープンデータ提供元を開く</a>'}
-  loadIbarakiMunicipalities();
+  indexLoaded=true;renderResults();
+ }catch(e){$("loadState").textContent="全国データを読み込めませんでした："+e.message+"。通信環境を確認してください。";$("results").innerHTML='<a href="https://tecolicom.github.io/japan-gomi-data/" target="_blank" rel="noopener">オープンデータ提供元を開く</a>';throw e}finally{indexPromise=null}})();return indexPromise;
 }
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 async function loadIbarakiMunicipalities(){
- try{const res=await fetch("./data/ibaraki-municipalities.json",{cache:"no-store"});if(!res.ok)throw Error("HTTP "+res.status);const data=await res.json();ibarakiMunicipalities=data.municipalities||[];
-  try{const ir=await fetch("./data/imported-collection-dates.json",{cache:"no-store"});if(ir.ok){const imported=await ir.json();importedCollectionEvents=imported.events||[];importedCollectionRules=imported.rules||[]}}catch(e){console.warn("抽出済み日程を読み込めません",e)}
+ try{const res=await fetch("./data/ibaraki-municipalities.json",{cache:"force-cache"});if(!res.ok)throw Error("HTTP "+res.status);const data=await res.json();ibarakiMunicipalities=data.municipalities||[];
+  try{const ir=await fetch("./data/imported-collection-dates.json",{cache:"force-cache"});if(ir.ok){const imported=await ir.json();importedCollectionEvents=imported.events||[];importedCollectionRules=imported.rules||[]}}catch(e){console.warn("抽出済み日程を読み込めません",e)}
   const pref=$("pref");if(![...pref.options].some(o=>o.value==="茨城県"))pref.add(new Option("茨城県","茨城県"));renderResults();
  }catch(e){console.warn("茨城県の自治体一覧を読み込めませんでした",e)}
 }
@@ -114,7 +114,7 @@ function renderResults(){
  $("results").querySelectorAll("[data-index]").forEach(el=>el.onclick=()=>choose(records[Number(el.dataset.index)]));
  $("results").querySelectorAll("[data-import]").forEach(el=>el.onclick=()=>chooseImported(el.dataset.import));
 }
-$("query").addEventListener("input",renderResults);$("pref").addEventListener("change",renderResults);
+$("query").addEventListener("input",async()=>{const q=$("query").value.trim();if(q&&!indexLoaded){try{await loadIndex()}catch(e){return}}renderResults()});$("pref").addEventListener("change",async()=>{const p=$("pref").value;if(p==="茨城県"){await loadIbarakiMunicipalities();renderResults();return}if(p&&!indexLoaded){try{await loadIndex()}catch(e){return}}renderResults()});
 function decodeIcs(s){return (s||"").replace(/\\n/gi," ").replace(/\\,/g,",").replace(/\\;/g,";").replace(/\\\\/g,"\\")}
 function parseIcs(text){
  const lines=text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n"),unfold=[];
@@ -140,7 +140,7 @@ async function choose(r){
  document.querySelector('[data-tab="calendar"]').click();
  try{
   let url=r.ics.trim();if(!/^https?:\/\//i.test(url))url="https://tecolicom.github.io/japan-gomi-data/"+url.replace(/^\//,"");
-  const res=await fetch(url,{cache:"no-store"});if(!res.ok)throw Error("HTTP "+res.status);
+  const res=await fetch(url,{cache:"force-cache"});if(!res.ok)throw Error("HTTP "+res.status);
   events=parseIcs(await res.text());$("selectedArea").textContent+="　｜　"+events.length+" 件の日程を取得";
   month=new Date();month.setDate(1);picked=new Date();picked.setHours(0,0,0,0);drawCalendar();
  }catch(e){$("selectedArea").textContent+="　｜　読み込み失敗："+e.message;$("dayEvents").textContent="このコースのカレンダーを読み込めませんでした。提供元の一覧から確認してください。";$("upcoming").textContent="";drawCalendar()}
@@ -184,6 +184,6 @@ function renderManual(){$("manualList").innerHTML=manual.length?manual.slice().s
 $("addManual").onclick=()=>{const date=$("manualDate").value,name=$("manualName").value.trim();if(!date||!name){alert("日付と予定名を入力してください");return}manual.push({date,name,memo:$("manualMemo").value.trim()});$("manualName").value="";$("manualMemo").value="";saveManual()};
 $("exportManual").onclick=()=>{const a=document.createElement("a"),u=URL.createObjectURL(new Blob([JSON.stringify(manual,null,2)],{type:"application/json"}));a.href=u;a.download="gomi-manual.json";a.click();URL.revokeObjectURL(u)};
 $("importManual").onchange=async e=>{try{const x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x)||x.some(v=>!v.date||!v.name))throw Error();manual=x;saveManual()}catch{alert("ファイルを読み込めませんでした")}};
-renderManual();drawCalendar();loadIndex();
+renderManual();drawCalendar();$("loadState").textContent="都道府県を選ぶか、市区町村名を入力すると、全国データを読み込みます。";loadIbarakiMunicipalities();
 </script>
 </body></html>
