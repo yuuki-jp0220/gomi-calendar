@@ -30,9 +30,9 @@ MAX_ASSETS_PER_PAGE = 8
 TRAINING = [
     ("燃えるごみ", "可燃ごみ"), ("燃やすごみ", "可燃ごみ"), ("可燃ごみ", "可燃ごみ"),
     ("燃えないごみ", "不燃ごみ"), ("燃やさないごみ", "不燃ごみ"), ("不燃ごみ", "不燃ごみ"),
-    ("資源ごみ", "資源ごみ"), ("資源物", "資源ごみ"), ("びん", "資源ごみ"),
+    ("資源ごみ", "資源ごみ"), ("資源物", "資源ごみ"), ("びん", "資源ごみ"), ("ビン", "資源ごみ"),
     ("かん", "資源ごみ"), ("缶", "資源ごみ"), ("ペットボトル", "資源ごみ"),
-    ("古紙", "資源ごみ"), ("新聞紙", "資源ごみ"), ("段ボール", "資源ごみ"),
+    ("古紙", "資源ごみ"), ("紙", "資源ごみ"), ("布類", "資源ごみ"), ("新聞紙", "資源ごみ"), ("段ボール", "資源ごみ"),
     ("プラスチック", "プラスチック"), ("容器包装プラ", "プラスチック"),
     ("粗大ごみ", "粗大ごみ"), ("有害ごみ", "有害ごみ"), ("危険ごみ", "有害ごみ"),
 ]
@@ -250,7 +250,19 @@ def explicit_dates(line):
     return found
 
 def terms_in(line):
-    return list(dict.fromkeys(t for t in GARBAGE_TERMS if t in line))
+    # 公式テキスト版の「ビン、ペットボトル」のような列挙を品目ごとに分ける。
+    # 括弧内の補足は残し、分類モデルにはその品目全体を渡す。
+    found = []
+    for part in re.split(r"[、,，／/・]", clean(line)):
+        part = clean(part)
+        if not part:
+            continue
+        matches = [term for term in GARBAGE_TERMS if term in part]
+        if matches:
+            candidate = part[:100]
+            if candidate not in found:
+                found.append(candidate)
+    return found
 
 def parse_text(municipality, page_url, page_text, asset_texts, ai):
     events, rules, review = [], [], []
