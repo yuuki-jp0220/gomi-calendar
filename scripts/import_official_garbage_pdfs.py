@@ -280,7 +280,9 @@ def parse_text(municipality, page_url, page_text, asset_texts, ai):
             rule_match = WEEKDAY_RULE.search(line)
             if not dates and not rule_match:
                 continue
-            if "無し" in line or "なし" in line:
+            # 「無し」は収集品目ではなく、収集がない日の表記。
+            # 同じ行に実際の品目があれば、その品目の抽出は続ける。
+            if not terms and re.search(r"(?:無し|なし)", line):
                 continue
             if len(terms) > 1 and len(dates) == 1:
                 for raw_type in terms:
