@@ -230,6 +230,182 @@ def extract_asset_text(asset, ocr):
             print("Image OCR warning:", str(exc)[:120])
     return chunks
 
+def extract_toride_grid_calendar(asset, municipality, page_url):
+    """取手市公式PDFの月間カレンダーを、PDF内の文字座標と罫線から保守的に解析する。"""
+    events = []
+    review = []
+    try:
+        with pdfplumber.open(str(asset["path"])) as pdf:
+            for page_index, page in enumerate(pdf.pages):
+                words = page.extract_words(x_tolerance=1, y_tolerance=2, keep_blank_chars=False)
+                if not words:
+                    review.append({
+                        "municipality": municipality, "district": "A面/B面の判別済み・日付未判定",
+                        "type": "カレンダー解析未完了", "source_page": page_url,
+                        "source_asset": asset["url"], "source_page_number": page_index + 1,
+                        "verification": "要確認", "engine": "PDF-grid-parser-v1",
+                        "raw_text": "PDFから座標付き文字を取得できませんでした。",
+                        "candidate_dates": [], "candidate_types": [],
+                        "reason": "画像PDFのため座標付きテキストが取得できない"
+                    })
+                    continue
+
+                horizontal = []
+                vertical = []
+                for line in page.lines:
+                    x0, x1 = float(line.get("x0", 0)), float(line.get("x1", 0))
+                    y0, y1 = float(line.get("top", line.get("y0", 0))), float(line.get("bottom", line.get("y1", 0)))
+                    if abs(y1 - y0) <= 1.2 and abs(x1 - x0) >= 25:
+                        horizontal.append((round((y0 + y1) / 2, 1), min(x0, x1), max(x0, x1)))
+                    elif abs(x1 - x0) <= 1.2 and abs(y1 - y0) >= 25:
+                        vertical.append((round((x0 + x1) / 2, 1), min(y0, y1), max(y0, y1)))
+
+                # 月見出しの「数字 + 月」を同じ行から検出する。
+                month_heads = []
+                for w in words:
+                    token = clean(w.get("text", ""))
+                    if not re.fullmatch(r"(?:[1-9]|1[0-2])", token):
+                        continue
+                    month = int(token)
+                    near_month = [
+                        z for z in words
+                        if clean(z.get("text", "")) == "月"
+                        and abs(float(z["top"]) - float(w["top"])) < 4
+                        and 0 <= float(z["x0"]) - float(w["x1"]) < 14
+                    ]
+                    if near_month:
+                        month_heads.append((month, (float(w["x0"]) + float(near_month[0]["x1"])) / 2, float(w["bottom"])))
+                unique_heads = []
+                for item in sorted(month_heads, key=lambda x: (x[2], x[1])):
+                    if not any(item[0] == old[0] and abs(item[1] - old[1]) < 12 and abs(item[2] - old[2]) < 8 for old in unique_heads):
+                        unique_heads.append(item)
+
+                side = "A面地区" if page_index == 0 else "B面地区"
+                fiscal_year = 2026
+                parsed_months = 0
+                for month, center_x, header_bottom in unique_heads:
+                    # 見出し直下にある月間表の上辺を特定。
+                    top_candidates = [
+                        h for h in horizontal
+                        if header_bottom + 3 <= h[0] <= header_bottom + 42
+                        and h[1] < center_x < h[2]
+                        and (h[2] - h[1]) >= 100
+                    ]
+                    if not top_candidates:
+                        continue
+                    top_line = min(top_candidates, key=lambda h: h[0])
+                    grid_top, gx0, gx1 = top_line
+                    vxs = sorted(set(round(x, 1) for x, y0, y1 in vertical if abs(y0 - grid_top) <= 4 and y1 > grid_top + 45 and gx0 - 2 <= x <= gx1 + 2))
+                    # 罫線の検出誤差を許容し、表幅内の8本だけを採用する。
+                    if len(vxs) != 8:
+                        vxs = sorted(set(round(x, 1) for x, y0, y1 in vertical if y0 <= grid_top + 4 and y1 >= grid_top + 55 and gx0 - 2 <= x <= gx1 + 2))
+                    if len(vxs) != 8:
+                        continue
+                    hys = sorted(set(round(y, 1) for y, x0, x1 in horizontal if grid_top - 2 <= y <= grid_top + 145 and x0 <= gx0 + 2 and x1 >= gx1 - 2))
+                    if len(hys) < 7:
+                        continue
+                    # 表の下側にある説明欄の罫線を混ぜない。最大8本（曜日見出し+最大6週）。
+                    hys = hys[:8]
+                    if hys[0] < grid_top - 2 or hys[-1] - hys[0] < 45:
+                        continue
+
+                    year = fiscal_year + (1 if month <= 3 else 0)
+                    month_events = 0
+                    for row_index in range(1, len(hys) - 1):
+                        y_top, y_bottom = hys[row_index], hys[row_index + 1]
+                        for col in range(7):
+                            x_left, x_right = vxs[col], vxs[col + 1]
+                            cell_words = [
+                                w for w in words
+                                if x_left + 0.5 <= (float(w["x0"]) + float(w["x1"])) / 2 <= x_right - 0.5
+                                and y_top + 0.5 <= (float(w["top"]) + float(w["bottom"])) / 2 <= y_bottom - 0.5
+                            ]
+                            day_words = []
+                            for w in cell_words:
+                                t = clean(w.get("text", ""))
+                                if re.fullmatch(r"(?:[1-9]|[12]\d|3[01])", t):
+                                    cy = (float(w["top"]) + float(w["bottom"])) / 2
+                                    if cy <= y_top + (y_bottom - y_top) * 0.58:
+                                        day_words.append(w)
+                            if not day_words:
+                                continue
+                            day_word = min(day_words, key=lambda w: (float(w["top"]), float(w["x0"])))
+                            day = int(clean(day_word["text"]))
+                            try:
+                                date_obj = datetime(year, month, day)
+                            except ValueError:
+                                continue
+                            # 日曜始まりの曜日列と実際の曜日が一致しないセルは採用しない。
+                            if date_obj.weekday() != ((col + 6) % 7):
+                                continue
+                            label_words = [
+                                w for w in cell_words
+                                if w is not day_word
+                                and (float(w["top"]) + float(w["bottom"])) / 2 > (float(day_word["top"]) + float(day_word["bottom"])) / 2
+                            ]
+                            label = re.sub(r"\s+", "", "".join(clean(w.get("text", "")) for w in sorted(label_words, key=lambda w: (float(w["top"]), float(w["x0"])))))
+                            if not label:
+                                continue
+                            categories = []
+                            if "年始休" in label or "年末年始休" in label:
+                                categories.append(("収集なし", "収集なし"))
+                            if "プラ容器包装" in label or "プラスチック製容器包装" in label:
+                                categories.append(("プラスチック製容器包装", "プラ容器包装"))
+                            if "ペット" in label:
+                                categories.append(("ペットボトル", "ペット"))
+                            if "古紙" in label or "古布" in label:
+                                categories.append(("古紙・古布", "古紙・古布"))
+                            if "不燃" in label:
+                                m = re.search(r"不燃[（(]([アアイイ])[）)]", label)
+                                categories.append(("不燃ごみ（" + (m.group(1) if m else "区分未判定") + "）", "不燃"))
+                            if "可燃" in label:
+                                categories.append(("可燃ごみ", "可燃"))
+                            if "ビン" in label or "びん" in label:
+                                categories.append(("びん", "ビン"))
+                            if "缶" in label:
+                                categories.append(("缶", "缶"))
+                            if not categories:
+                                if "休" in label:
+                                    categories.append(("収集なし", "休"))
+                                else:
+                                    continue
+                            for category, raw in categories:
+                                events.append({
+                                    "municipality": municipality, "district": side,
+                                    "type": category, "raw_type": raw,
+                                    "date": date_obj.strftime("%Y-%m-%d"),
+                                    "note": f"取手市公式カレンダー {side} / {month}月 / {day}日 / {label}",
+                                    "source_page": page_url, "source_asset": asset["url"],
+                                    "source_page_number": page_index + 1,
+                                    "verification": "曜日・セル位置確認済み（要目視確認）",
+                                    "engine": "PDF-grid-parser-v1", "confidence": 0.95
+                                })
+                                month_events += 1
+                    if month_events:
+                        parsed_months += 1
+
+                if parsed_months == 0:
+                    review.append({
+                        "municipality": municipality, "district": side,
+                        "type": "カレンダー解析未完了", "source_page": page_url,
+                        "source_asset": asset["url"], "source_page_number": page_index + 1,
+                        "verification": "要確認", "engine": "PDF-grid-parser-v1",
+                        "raw_text": "月見出し・罫線・日付セルの対応を十分に検出できませんでした。",
+                        "candidate_dates": [], "candidate_types": [],
+                        "reason": "カレンダーの座標構造を安全に確定できない"
+                    })
+    except Exception as exc:
+        review.append({
+            "municipality": municipality, "district": "A面/B面",
+            "type": "カレンダー解析エラー", "source_page": page_url,
+            "source_asset": asset.get("url", ""), "source_page_number": None,
+            "verification": "要確認", "engine": "PDF-grid-parser-v1",
+            "raw_text": str(exc)[:400], "candidate_dates": [], "candidate_types": [],
+            "reason": "PDF座標解析で例外が発生"
+        })
+    return events, review
+
+
 DATE_PATTERNS = [
     re.compile(r"(?<!\d)(20\d{2})[年./-](\d{1,2})[月./-](\d{1,2})日?"),
     re.compile(r"(?<!\d)(20\d{2})(\d{2})(\d{2})(?!\d)"),
@@ -410,7 +586,16 @@ def main():
                     asset["path"].unlink(missing_ok=True)
                 continue
 
-            new_events, new_rules, new_review = parse_text(municipality, page_url, page_text, asset_texts, ai)
+            if municipality == "取手市":
+                # 取手市はA面・B面の月間マス目を座標解析し、通常の行単位OCRとは分離する。
+                new_events, new_rules, new_review = parse_text(municipality, page_url, page_text, [], ai)
+                for asset in assets:
+                    if asset["url"].endswith("/r8ab.pdf"):
+                        grid_events, grid_review = extract_toride_grid_calendar(asset, municipality, page_url)
+                        new_events.extend(grid_events)
+                        new_review.extend(grid_review)
+            else:
+                new_events, new_rules, new_review = parse_text(municipality, page_url, page_text, asset_texts, ai)
             # 解析が正常終了した公式ページ分だけ差し替える。失敗時は既存データを保持。
             events = [x for x in events if x.get("source_page") != page_url] + new_events
             rules = [x for x in rules if x.get("source_page") != page_url] + new_rules
