@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-21T02:38:04.927550+00:00",
+  "checked_at": "2026-11-21T10:12:12.034916+00:00",
   "sources": [
     {
       "municipality": "水戸市",
@@ -9,12 +9,12 @@
       "status": 200,
       "final_url": "https://www.city.mito.lg.jp/site/gomi/120306.html",
       "content_type": "text/html; charset=UTF-8",
-      "last_modified": "Sat, 21 Nov 2026 02:02:43 GMT",
+      "last_modified": "Sat, 21 Nov 2026 10:02:41 GMT",
       "etag": null,
       "sha256": "9466fb8f4709aa17c2de816289b64d4e1a677fe70ea198b3b9ecb686d912bee2",
       "bytes": 35776,
       "check": "ok",
-      "checked_at": "2026-11-21T02:38:04.927550+00:00"
+      "checked_at": "2026-11-21T10:12:12.034916+00:00"
     },
     {
       "municipality": "日立市",
@@ -24,12 +24,12 @@
       "status": 200,
       "final_url": "https://www.city.hitachi.lg.jp/kurashi_tetsuzuki/gomi_recycle/1002242/1009431.html",
       "content_type": "text/html",
-      "last_modified": "Sat, 21 Nov 2026 02:01:21 GMT",
-      "etag": "\"e6cb-660bfbcb58c42\"",
+      "last_modified": "Sat, 21 Nov 2026 09:01:19 GMT",
+      "etag": "\"e6cb-660c59aa988f3\"",
       "sha256": "4bde5625cd307c5aacaeaeeb5378e6a3f677d3e7579865883ce7649b6cf52893",
       "bytes": 59083,
       "check": "ok",
-      "checked_at": "2026-11-21T02:38:04.927550+00:00"
+      "checked_at": "2026-11-21T10:12:12.034916+00:00"
     },
     {
       "municipality": "土浦市",
@@ -44,7 +44,7 @@
       "sha256": "9cb4226b19b8265f0b148067cb99b3be4dd3fd45d146edc40e936b9dc4be3ece",
       "bytes": 24883,
       "check": "ok",
-      "checked_at": "2026-11-21T02:38:04.927550+00:00"
+      "checked_at": "2026-11-21T10:12:12.034916+00:00"
     },
     {
       "municipality": "取手市",
@@ -62,7 +62,7 @@
       "sha256": "e664cd17b5465ee95d5a38a1d7ad5841f3b21d971478d2749f686c51850d1277",
       "bytes": 26409,
       "check": "ok",
-      "checked_at": "2026-11-21T02:38:04.927550+00:00"
+      "checked_at": "2026-11-21T10:12:12.034916+00:00"
     },
     {
       "municipality": "龍ケ崎市",
@@ -77,7 +77,7 @@
       "sha256": "b135ee2b80881a7e37d14f0eee0f3150f9cabb7f2e152813998b4d5389a0e99a",
       "bytes": 32752,
       "check": "ok",
-      "checked_at": "2026-11-21T02:38:04.927550+00:00"
+      "checked_at": "2026-11-21T10:12:12.034916+00:00"
     },
     {
       "municipality": "牛久市",
@@ -92,7 +92,7 @@
       "sha256": "0d6bc09d8897c81ab991c3ed3803d6a6b0ee860230c803c84940fd606c6c6593",
       "bytes": 11649,
       "check": "ok",
-      "checked_at": "2026-11-21T02:38:04.927550+00:00"
+      "checked_at": "2026-11-21T10:12:12.034916+00:00"
     },
     {
       "municipality": "つくば市",
@@ -107,7 +107,7 @@
       "sha256": "f098890e76b3f27cb45c7dd51e7ecc8679e5b429257e76339d14f5ba9c13498e",
       "bytes": 71296,
       "check": "ok",
-      "checked_at": "2026-11-21T02:38:04.927550+00:00"
+      "checked_at": "2026-11-21T10:12:12.034916+00:00"
     },
     {
       "municipality": "鹿嶋市",
@@ -117,12 +117,12 @@
       "status": 200,
       "final_url": "https://www.city.kashima.ibaraki.jp/site/shinsei/83368.html",
       "content_type": "text/html",
-      "last_modified": "Sat, 21 Nov 2026 02:01:12 GMT",
+      "last_modified": "Sat, 21 Nov 2026 10:01:09 GMT",
       "etag": null,
       "sha256": "f11de1e66b8812b0a328070bae438044f05c1d636434a5c5e7b2f664ccce5374",
       "bytes": 25206,
       "check": "ok",
-      "checked_at": "2026-11-21T02:38:04.927550+00:00"
+      "checked_at": "2026-11-21T10:12:12.034916+00:00"
     },
     {
       "municipality": "守谷市",
@@ -132,12 +132,12 @@
       "status": 200,
       "final_url": "https://www.city.moriya.ibaraki.jp/kurashi_tetsuzuki/kankyo_gomi/1002052/1002060/1008307/index.html",
       "content_type": "text/html",
-      "last_modified": "Sat, 21 Nov 2026 02:00:34 GMT",
-      "etag": "\"6946-660bfb9f2dbc2\"",
+      "last_modified": "Sat, 21 Nov 2026 09:00:34 GMT",
+      "etag": "\"6946-660c597fc51b2\"",
       "sha256": "70e41cfdba0878d947cfd237973f5698ba5166ca963bb5eac1fe771a0dd9cb58",
       "bytes": 26950,
       "check": "ok",
-      "checked_at": "2026-11-21T02:38:04.927550+00:00"
+      "checked_at": "2026-11-21T10:12:12.034916+00:00"
     },
     {
       "municipality": "茨城町",
@@ -152,7 +152,7 @@
       "sha256": "f1f5844c4d69879ceb62250604430c9275a3cb9bab5d6221d8d2d1f423e1baaf",
       "bytes": 75719,
       "check": "ok",
-      "checked_at": "2026-11-21T02:38:04.927550+00:00"
+      "checked_at": "2026-11-21T10:12:12.034916+00:00"
     }
   ]
 }
