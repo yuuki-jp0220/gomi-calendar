@@ -69,6 +69,7 @@ const $=id=>document.getElementById(id);
 let records=[],indexLoaded=false,indexPromise=null,ibarakiMunicipalities=[],importedCollectionEvents=[],importedCollectionRules=[],active=null,events=[],month=new Date(),picked=new Date();picked.setHours(0,0,0,0);
 let manual=JSON.parse(localStorage.getItem("gomiManualV2")||"[]");
 const jpDays=["日","月","火","水","木","金","土"];
+const PREFECTURES='北海道 青森県 岩手県 宮城県 秋田県 山形県 福島県 茨城県 栃木県 群馬県 埼玉県 千葉県 東京都 神奈川県 新潟県 富山県 石川県 福井県 山梨県 長野県 岐阜県 静岡県 愛知県 三重県 滋賀県 京都府 大阪府 兵庫県 奈良県 和歌山県 鳥取県 島根県 岡山県 広島県 山口県 徳島県 香川県 愛媛県 高知県 福岡県 佐賀県 長崎県 熊本県 大分県 宮崎県 鹿児島県 沖縄県'.split(' ');
 function csvParse(text){
  const rows=[];let row=[],cell="",quoted=false;
  for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];
@@ -90,7 +91,7 @@ async function loadIndex(){
   const text=await res.text(),rows=csvParse(text.replace(/^\uFEFF/,""));if(rows.length<2)throw Error("CSVにデータがありません");
   const idx={};rows[0].forEach((h,i)=>idx[h.trim()]=i);
   records=rows.slice(1).map(r=>normalizeRecord(r,idx)).filter(r=>r.city&&r.pref&&r.ics);
-  const prefs=[...new Set(records.map(r=>r.pref))].sort((a,b)=>a.localeCompare(b,"ja"));
+  const prefs=[...new Set([...PREFECTURES,...records.map(r=>r.pref)])].sort((a,b)=>a.localeCompare(b,"ja"));
   $("pref").innerHTML='<option value="">すべての都道府県</option>'+prefs.map(p=>'<option>'+escapeHtml(p)+'</option>').join("");
   $("loadState").textContent=records.length.toLocaleString()+" 件の収集コースを読み込みました。都道府県・市区町村・町名で検索できます。";
   indexLoaded=true;renderResults();
@@ -184,6 +185,6 @@ function renderManual(){$("manualList").innerHTML=manual.length?manual.slice().s
 $("addManual").onclick=()=>{const date=$("manualDate").value,name=$("manualName").value.trim();if(!date||!name){alert("日付と予定名を入力してください");return}manual.push({date,name,memo:$("manualMemo").value.trim()});$("manualName").value="";$("manualMemo").value="";saveManual()};
 $("exportManual").onclick=()=>{const a=document.createElement("a"),u=URL.createObjectURL(new Blob([JSON.stringify(manual,null,2)],{type:"application/json"}));a.href=u;a.download="gomi-manual.json";a.click();URL.revokeObjectURL(u)};
 $("importManual").onchange=async e=>{try{const x=JSON.parse(await e.target.files[0].text());if(!Array.isArray(x)||x.some(v=>!v.date||!v.name))throw Error();manual=x;saveManual()}catch{alert("ファイルを読み込めませんでした")}};
-renderManual();drawCalendar();$("loadState").textContent="都道府県を選ぶか、市区町村名を入力すると、全国データを読み込みます。";loadIbarakiMunicipalities();
+PREFECTURES.forEach(p=>$("pref").add(new Option(p,p)));renderManual();drawCalendar();$("loadState").textContent="都道府県を選ぶか、市区町村名を入力すると、全国データを読み込みます。";loadIbarakiMunicipalities();
 </script>
 </body></html>
