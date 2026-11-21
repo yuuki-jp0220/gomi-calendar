@@ -282,33 +282,50 @@ def extract_toride_grid_calendar(asset, municipality, page_url, ocr):
                 if (not horizontal or not vertical) and pix is not None:
                     gray = np.asarray(Image.frombytes("RGB", [pix.width, pix.height], pix.samples).convert("L"))
                     dark = gray < 175
-                    row_hits = np.where(dark.sum(axis=1) >= max(100, int(pix.width * 0.42)))[0]
-                    col_hits = np.where(dark.sum(axis=0) >= max(100, int(pix.height * 0.30)))[0]
-
-                    def grouped_centers(values, max_gap=3):
-                        if len(values) == 0:
+                    def pixel_runs(mask, min_length, join_gap=2):
+                        positions = np.where(mask)[0]
+                        if len(positions) == 0:
                             return []
-                        groups, current = [], [int(values[0])]
-                        for value in values[1:]:
+                        groups, current = [], [int(positions[0])]
+                        for value in positions[1:]:
                             value = int(value)
-                            if value - current[-1] <= max_gap:
+                            if value - current[-1] <= join_gap + 1:
                                 current.append(value)
                             else:
-                                groups.append(current)
+                                if current[-1] - current[0] + 1 >= min_length:
+                                    groups.append((current[0], current[-1]))
                                 current = [value]
-                        groups.append(current)
-                        return [sum(g) / len(g) for g in groups if len(g) >= 1]
+                        if current[-1] - current[0] + 1 >= min_length:
+                            groups.append((current[0], current[-1]))
+                        return groups
 
+                    # 月ごとの表はページ全体の約1/3幅・1/10高さなので、
+                    # ページ全体に対する割合ではなく短い線分を各行・列で検出する。
                     if not horizontal:
-                        for y in grouped_centers(row_hits):
-                            xs = np.where(dark[int(y), :])[0]
-                            if len(xs):
-                                horizontal.append((y / scale, float(xs.min()) / scale, float(xs.max()) / scale))
+                        for y in range(pix.height):
+                            for x0, x1 in pixel_runs(dark[y, :], max(90, int(pix.width * 0.12))):
+                                horizontal.append((y / scale, x0 / scale, x1 / scale))
                     if not vertical:
-                        for x in grouped_centers(col_hits):
-                            ys = np.where(dark[:, int(x)])[0]
-                            if len(ys):
-                                vertical.append((x / scale, float(ys.min()) / scale, float(ys.max()) / scale))
+                        for x in range(pix.width):
+                            for y0, y1 in pixel_runs(dark[:, x], max(55, int(pix.height * 0.045))):
+                                vertical.append((x / scale, y0 / scale, y1 / scale))
+
+                    # 隣接ピクセルに重複した罫線候補をまとめる。
+                    def merge_near_lines(lines, axis_index, span_indices, tolerance=2.0):
+                        merged = []
+                        for line in sorted(lines, key=lambda z: z[axis_index]):
+                            if merged and abs(line[axis_index] - merged[-1][axis_index]) <= tolerance:
+                                prev = merged[-1]
+                                merged[-1] = (
+                                    (prev[0] + line[0]) / 2 if axis_index == 0 else prev[0],
+                                    min(prev[1], line[1]) if axis_index == 0 else (prev[1] + line[1]) / 2,
+                                    max(prev[2], line[2]) if axis_index == 0 else max(prev[2], line[2])
+                                )
+                            else:
+                                merged.append(line)
+                        return merged
+                    horizontal = merge_near_lines(horizontal, 0, (1, 2))
+                    vertical = merge_near_lines(vertical, 0, (1, 2))
 
                 if not words:
                     review.append({
