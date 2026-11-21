@@ -94,10 +94,24 @@
     {
       "name": "取手市",
       "official_site": "https://www.city.toride.ibaraki.jp/",
-      "calendar_status": "公式カレンダー掲載確認",
-      "calendar_source": null,
+      "calendar_status": "令和8年度公式カレンダー確認済み（A面・B面）",
+      "calendar_source": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/documents/r8ab.pdf",
       "calendar_page": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/g-calendar.html",
-      "verified_on": "2026-11-20"
+      "verified_on": "2026-11-21",
+      "official_calendars": [
+        {
+          "district": "A面地区",
+          "label": "A面カレンダー（PDF）",
+          "url": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/documents/r8a.pdf",
+          "pdf_page": 1
+        },
+        {
+          "district": "B面地区",
+          "label": "B面カレンダー（PDF）",
+          "url": "https://www.city.toride.ibaraki.jp/kankyo/kurashi/gomi/kategomi/documents/r8ab.pdf#page=2",
+          "pdf_page": 2
+        }
+      ]
     },
     {
       "name": "牛久市",
