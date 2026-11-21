@@ -123,6 +123,64 @@ def fetch_page_assets(url):
             print("Dynamic page fallback:", str(exc)[:120])
     return page_text[:50000], downloaded
 
+
+def fetch_linked_calendar_text(url):
+    """守谷市などの公式テキスト版カレンダーから月別日程を取得する。"""
+    session = requests.Session()
+    session.headers.update(HEADERS)
+    response = session.get(url, timeout=35)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    text_link = ""
+    for link in soup.find_all("a", href=True):
+        label = clean(link.get_text(" ", strip=True))
+        if "テキスト版" in label and "クリーンカレンダー" in label:
+            text_link = urljoin(url, link["href"])
+            break
+    if not text_link:
+        return ""
+
+    index_response = session.get(text_link, timeout=35)
+    index_response.raise_for_status()
+    index_soup = BeautifulSoup(index_response.text, "html.parser")
+    index_text = clean(index_soup.get_text(" ", strip=True))
+    year_match = re.search(r"(20\d{2})年度", index_text)
+    if not year_match:
+        return ""
+    fiscal_year = int(year_match.group(1))
+
+    lines = []
+    for link in index_soup.find_all("a", href=True):
+        label = clean(link.get_text(" ", strip=True))
+        month_match = re.search(r"(1[0-2]|[1-9])月クリーンカレンダー", label)
+        if not month_match:
+            continue
+        month = int(month_match.group(1))
+        month_url = urljoin(text_link, link["href"])
+        try:
+            month_response = session.get(month_url, timeout=30)
+            month_response.raise_for_status()
+            month_soup = BeautifulSoup(month_response.text, "html.parser")
+            body = month_soup.find("main") or month_soup.find(id="contents") or month_soup.body or month_soup
+            body_text = body.get_text("\n", strip=True)
+            calendar_year = fiscal_year + (1 if month <= 3 else 0)
+            lines.append("【公式月別ページ " + month_url + "】")
+            for raw_line in body_text.splitlines():
+                line = clean(raw_line)
+                match = re.match(r"^(\d{1,2})日[（(]([^）)]+)[）)]\s*(.*)$", line)
+                if not match:
+                    continue
+                day, weekday, details = match.groups()
+                try:
+                    date_text = datetime(calendar_year, month, int(day)).strftime("%Y年%m月%d日")
+                except ValueError:
+                    continue
+                lines.append(f"{date_text}（{weekday}）{details}")
+        except Exception as exc:
+            print("Monthly text page failed:", month_url, str(exc)[:120])
+    return "\n".join(lines)
+
 def extract_asset_text(asset, ocr):
     path = asset["path"]
     suffix = path.suffix.lower()
@@ -210,6 +268,30 @@ def parse_text(municipality, page_url, page_text, asset_texts, ai):
             rule_match = WEEKDAY_RULE.search(line)
             if not dates and not rule_match:
                 continue
+            if "無し" in line or "なし" in line:
+                continue
+            if len(terms) > 1 and len(dates) == 1:
+                for raw_type in terms:
+                    normalized, confidence, uncertain = ai.classify(raw_type)
+                    common_multi = {
+                        "municipality": municipality,
+                        "district": "地区不明",
+                        "type": normalized or raw_type,
+                        "note": line[:300],
+                        "source_page": page_url,
+                        "source_asset": "",
+                        "source_page_number": None,
+                        "verification": "要確認",
+                        "engine": "BuiltIn-Lightweight-AI (v1.0)",
+                    }
+                    if not uncertain:
+                        key = (dates[0], normalized, source_name, page_no, line, raw_type)
+                        if key not in seen:
+                            events.append({**common_multi, "date": dates[0], "raw_type": raw_type, "confidence": round(confidence, 3)})
+                            seen.add(key)
+                    else:
+                        review.append({**common_multi, "raw_text": line[:500], "candidate_dates": dates, "candidate_types": [raw_type], "reason": "品目分類の確信度が低いため"})
+                continue
             if len(terms) == 1:
                 raw_type = terms[0]
                 normalized, confidence, uncertain = ai.classify(raw_type)
@@ -267,6 +349,9 @@ def main():
         assets = []
         try:
             page_text, assets = fetch_page_assets(page_url)
+            linked_calendar_text = fetch_linked_calendar_text(page_url)
+            if linked_calendar_text:
+                page_text = page_text + "\n" + linked_calendar_text
             asset_texts = []
             for asset in assets:
                 pages = extract_asset_text(asset, ocr)
