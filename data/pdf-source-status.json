@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-27T22:59:21.168869+00:00",
+  "checked_at": "2026-11-28T04:29:16.284889+00:00",
   "pdfs": [
     {
       "municipality": "水戸市",
@@ -34,11 +34,7 @@
       "page_url": "https://www.city.ryugasaki.ibaraki.jp/kurashi/kankyo/gomi/oshirase/gomisyuusyuukarennda.html",
       "sha256": "b1c35728ecf47525f1986f0b71b932ddc96b77fec9888c1b8df6114b15ee2cd2",
       "asset_count": 8,
-      "status": "processed",
-      "date_events": 0,
-      "rule_events": 0,
-      "review_items": 0,
-      "processed_at": "2026-11-27T22:58:31.470112+00:00"
+      "status": "processed_unchanged"
     },
     {
       "municipality": "牛久市",
